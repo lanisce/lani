@@ -1,0 +1,100 @@
+# Lani Platform Documentation Site Configuration
+# Built with Jekyll for GitHub Pages
+
+title: "Lani Platform Documentation"
+description: "Comprehensive project management and collaboration platform"
+baseurl: "/lani"
+url: "https://your-org.github.io"
+
+# Repository information
+repository: "your-org/lani"
+github_username: "your-org"
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+theme: minima
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+  - jekyll-redirect-from
+
+# Kramdown settings
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: 'highlight'
+    span:
+      line_numbers: false
+    block:
+      line_numbers: true
+
+# Collections
+collections:
+  guides:
+    output: true
+    permalink: /:collection/:name/
+  api:
+    output: true
+    permalink: /:collection/:name/
+  integrations:
+    output: true
+    permalink: /:collection/:name/
+
+# Navigation
+navigation:
+  - title: "Home"
+    url: "/"
+  - title: "Getting Started"
+    url: "/getting-started/"
+  - title: "Installation"
+    url: "/installation/"
+  - title: "Configuration"
+    url: "/configuration/"
+  - title: "Deployment"
+    url: "/deployment/"
+  - title: "API Reference"
+    url: "/api/"
+  - title: "Integrations"
+    url: "/integrations/"
+  - title: "Contributing"
+    url: "/contributing/"
+
+# Footer links
+footer_links:
+  - title: "GitHub"
+    url: "https://github.com/your-org/lani"
+    icon: "fab fa-github"
+  - title: "Issues"
+    url: "https://github.com/your-org/lani/issues"
+    icon: "fas fa-bug"
+  - title: "Discussions"
+    url: "https://github.com/your-org/lani/discussions"
+    icon: "fas fa-comments"
+
+# SEO and social
+twitter:
+  username: "lani_platform"
+  card: "summary_large_image"
+
+social:
+  name: "Lani Platform"
+  links:
+    - "https://github.com/your-org/lani"
+    - "https://twitter.com/lani_platform"
+
+# Analytics (optional)
+google_analytics: "G-XXXXXXXXXX"
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - README.md
