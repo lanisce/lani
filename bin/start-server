@@ -1,0 +1,29 @@
+#!/usr/bin/env ruby
+
+# Ensure Logger is available before anything else
+require 'logger'
+
+# Load bundler and gems
+require_relative '../config/boot'
+
+# Load Rails application
+require_relative '../config/application'
+
+# Initialize Rails
+Rails.application.initialize!
+
+# Start Puma server directly
+require 'puma'
+require 'puma/cli'
+
+# Configure Puma
+options = {
+  'bind' => 'tcp://0.0.0.0:3000',
+  'environment' => 'development',
+  'workers' => 1,
+  'threads' => '5:5'
+}
+
+# Start the server
+cli = Puma::CLI.new([], options)
+cli.run

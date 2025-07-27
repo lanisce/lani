@@ -1,0 +1,34 @@
+{{- if .Values.podDisruptionBudget.web.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "lani.fullname" . }}-web-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "lani.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web-pdb
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.web.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "lani.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: web
+{{- end }}
+
+---
+{{- if and .Values.sidekiq.enabled .Values.podDisruptionBudget.sidekiq.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "lani.fullname" . }}-sidekiq-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "lani.labels" . | nindent 4 }}
+    app.kubernetes.io/component: sidekiq-pdb
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.sidekiq.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "lani.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: sidekiq
+{{- end }}

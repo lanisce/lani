@@ -1,0 +1,440 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: lani-web
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: web
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: web
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lani-web
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: web
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lani
+      app.kubernetes.io/instance: lani-production
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: lani
+        app.kubernetes.io/instance: lani-production
+        app.kubernetes.io/component: web
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      serviceAccountName: lani-web
+      containers:
+        - name: lani
+          image: ghcr.io/your-org/lani:latest
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 1001
+            capabilities:
+              drop:
+                - ALL
+          command:
+            - bundle
+            - exec
+            - rails
+            - server
+            - -b
+            - 0.0.0.0
+            - -p
+            - "3000"
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          envFrom:
+            - configMapRef:
+                name: lani-config
+            - secretRef:
+                name: lani-secrets
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: localhost
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: localhost
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: localhost
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 30
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 250m
+            limits:
+              memory: 1Gi
+              cpu: 1000m
+          volumeMounts:
+            - name: storage
+              mountPath: /app/storage
+            - name: tmp
+              mountPath: /app/tmp
+            - name: log
+              mountPath: /app/log
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: lani-storage-pvc
+        - name: tmp
+          emptyDir: {}
+        - name: log
+          emptyDir: {}
+      initContainers:
+        - name: db-migrate
+          image: ghcr.io/your-org/lani:latest
+          command:
+            - bundle
+            - exec
+            - rails
+            - db:migrate
+          envFrom:
+            - configMapRef:
+                name: lani-config
+            - secretRef:
+                name: lani-secrets
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 512Mi
+              cpu: 500m
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: lani-web
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: web
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lani-storage-pvc
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: storage
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: nfs
+
+---
+# Sidekiq Worker Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lani-sidekiq
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: sidekiq
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lani
+      app.kubernetes.io/instance: lani-production
+      app.kubernetes.io/component: sidekiq
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: lani
+        app.kubernetes.io/instance: lani-production
+        app.kubernetes.io/component: sidekiq
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "7433"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      serviceAccountName: lani-web
+      containers:
+        - name: sidekiq
+          image: ghcr.io/your-org/lani:latest
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 1001
+            capabilities:
+              drop:
+                - ALL
+          command:
+            - bundle
+            - exec
+            - sidekiq
+            - -C
+            - config/sidekiq.yml
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          envFrom:
+            - configMapRef:
+                name: lani-config
+            - secretRef:
+                name: lani-secrets
+          livenessProbe:
+            exec:
+              command:
+                - pgrep
+                - -f
+                - sidekiq
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - pgrep
+                - -f
+                - sidekiq
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 512Mi
+              cpu: 500m
+          volumeMounts:
+            - name: storage
+              mountPath: /app/storage
+            - name: tmp
+              mountPath: /app/tmp
+            - name: log
+              mountPath: /app/log
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: lani-storage-pvc
+        - name: tmp
+          emptyDir: {}
+        - name: log
+          emptyDir: {}
+
+---
+# Horizontal Pod Autoscaler for Web
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: lani-web-hpa
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: web-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: lani-web
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+
+---
+# Horizontal Pod Autoscaler for Sidekiq
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: lani-sidekiq-hpa
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: sidekiq-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: lani-sidekiq
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+# Pod Disruption Budget for Web
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: lani-web-pdb
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: web-pdb
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lani
+      app.kubernetes.io/instance: lani-production
+      app.kubernetes.io/component: web
+
+---
+# Pod Disruption Budget for Sidekiq
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: lani-sidekiq-pdb
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: sidekiq-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lani
+      app.kubernetes.io/instance: lani-production
+      app.kubernetes.io/component: sidekiq

@@ -1,0 +1,141 @@
+<% content_for :title, "Edit #{@task.title}" %>
+
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Breadcrumb -->
+  <nav class="flex mb-6" aria-label="Breadcrumb">
+    <ol class="flex items-center space-x-4">
+      <li>
+        <%= link_to "Projects", projects_path, class: "text-gray-500 hover:text-gray-700" %>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+          <%= link_to @project.name, project_path(@project), class: "ml-4 text-gray-500 hover:text-gray-700" %>
+        </div>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+          <%= link_to @task.title, project_task_path(@project, @task), class: "ml-4 text-gray-500 hover:text-gray-700" %>
+        </div>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+          <span class="ml-4 text-gray-700 font-medium">Edit</span>
+        </div>
+      </li>
+    </ol>
+  </nav>
+
+  <div class="bg-white shadow rounded-lg">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h1 class="text-2xl font-bold text-gray-900">Edit Task</h1>
+      <p class="text-sm text-gray-600 mt-1">in <%= @project.name %></p>
+    </div>
+    
+    <div class="px-6 py-6">
+      <%= form_with model: [@project, @task], local: true, class: "space-y-6" do |form| %>
+        <% if @task.errors.any? %>
+          <div class="bg-red-50 border border-red-200 rounded-md p-4">
+            <div class="flex">
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">
+                  <%= pluralize(@task.errors.count, "error") %> prohibited this task from being saved:
+                </h3>
+                <div class="mt-2 text-sm text-red-700">
+                  <ul class="list-disc pl-5 space-y-1">
+                    <% @task.errors.full_messages.each do |message| %>
+                      <li><%= message %></li>
+                    <% end %>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
+        <div>
+          <%= form.label :title, class: "block text-sm font-medium text-gray-700" %>
+          <%= form.text_field :title, class: "form-input mt-1", placeholder: "Enter task title", required: true %>
+        </div>
+
+        <div>
+          <%= form.label :description, class: "block text-sm font-medium text-gray-700" %>
+          <%= form.text_area :description, rows: 4, class: "form-input mt-1", placeholder: "Describe the task..." %>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <%= form.label :status, class: "block text-sm font-medium text-gray-700" %>
+            <%= form.select :status, 
+                options_for_select([
+                  ['To Do', 'todo'],
+                  ['In Progress', 'in_progress'],
+                  ['Completed', 'completed']
+                ], @task.status), 
+                {}, { class: "form-input mt-1" } %>
+          </div>
+
+          <div>
+            <%= form.label :priority, class: "block text-sm font-medium text-gray-700" %>
+            <%= form.select :priority, 
+                options_for_select([
+                  ['Low', 'low'],
+                  ['Medium', 'medium'],
+                  ['High', 'high']
+                ], @task.priority), 
+                {}, { class: "form-input mt-1" } %>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <%= form.label :user_id, "Assign To", class: "block text-sm font-medium text-gray-700" %>
+            <%= form.select :user_id, 
+                options_from_collection_for_select(@project.members, :id, :name, @task.user_id), 
+                { prompt: "Select team member" }, 
+                { class: "form-input mt-1" } %>
+          </div>
+
+          <div>
+            <%= form.label :due_date, class: "block text-sm font-medium text-gray-700" %>
+            <%= form.date_field :due_date, class: "form-input mt-1" %>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <%= form.label :estimated_hours, class: "block text-sm font-medium text-gray-700" %>
+            <%= form.number_field :estimated_hours, class: "form-input mt-1", placeholder: "Hours", min: 0 %>
+          </div>
+
+          <div>
+            <%= form.label :actual_hours, class: "block text-sm font-medium text-gray-700" %>
+            <%= form.number_field :actual_hours, class: "form-input mt-1", placeholder: "Hours", min: 0 %>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+          <div class="flex space-x-3">
+            <%= form.submit "Update Task", class: "btn-primary" %>
+            <%= link_to "Cancel", project_task_path(@project, @task), class: "btn-secondary" %>
+          </div>
+          
+          <% if policy([@project, @task]).destroy? %>
+            <%= link_to "Delete Task", project_task_path(@project, @task), 
+                method: :delete, 
+                confirm: "Are you sure? This will permanently delete the task.", 
+                class: "text-sm text-red-600 hover:text-red-700" %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

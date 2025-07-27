@@ -1,0 +1,379 @@
+<% content_for :title, "Analytics Dashboard" %>
+
+<div class="min-h-screen bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
+        <p class="mt-2 text-gray-600">Comprehensive insights across your projects and activities</p>
+      </div>
+      
+      <div class="flex space-x-3">
+        <%= link_to export_pdf_reports_path(format: :pdf), 
+            class: "inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" do %>
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          Export PDF
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <!-- Total Projects -->
+      <div class="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200">
+        <div class="p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Total Projects</p>
+              <p class="text-2xl font-semibold text-gray-900"><%= @total_projects %></p>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="flex items-center text-sm">
+              <span class="text-green-600 font-medium"><%= @active_projects %></span>
+              <span class="text-gray-500 ml-1">active</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Task Completion -->
+      <div class="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200">
+        <div class="p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Task Completion</p>
+              <p class="text-2xl font-semibold text-gray-900">
+                <% completion_rate = @total_tasks > 0 ? ((@completed_tasks.to_f / @total_tasks) * 100).round(1) : 0 %>
+                <%= completion_rate %>%
+              </p>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="flex items-center text-sm">
+              <span class="text-gray-900 font-medium"><%= @completed_tasks %></span>
+              <span class="text-gray-500 ml-1">of <%= @total_tasks %> tasks</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Budget Utilization -->
+      <div class="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200">
+        <div class="p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-yellow-100 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Budget Utilization</p>
+              <p class="text-2xl font-semibold text-gray-900"><%= @budget_utilization %>%</p>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="flex items-center text-sm">
+              <span class="text-gray-900 font-medium">
+                <%= Money.new(@total_spent, 'usd').format %>
+              </span>
+              <span class="text-gray-500 ml-1">
+                of <%= Money.new(@total_budget, 'usd').format %>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team Activity -->
+      <div class="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200">
+        <div class="p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-purple-100 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Team Members</p>
+              <p class="text-2xl font-semibold text-gray-900">
+                <%= @user_projects.joins(:project_memberships).distinct.count('project_memberships.user_id') %>
+              </p>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="flex items-center text-sm">
+              <span class="text-green-600 font-medium">Active</span>
+              <span class="text-gray-500 ml-1">across projects</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      <!-- Projects by Status Chart -->
+      <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Projects by Status</h3>
+        <div class="h-64 flex items-center justify-center">
+          <% if @projects_by_status.any? %>
+            <div class="w-full">
+              <canvas id="projectsStatusChart" width="400" height="200"></canvas>
+            </div>
+          <% else %>
+            <div class="text-center text-gray-500">
+              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+              <p class="mt-2">No project data available</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Monthly Spending Chart -->
+      <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Monthly Spending Trend</h3>
+        <div class="h-64 flex items-center justify-center">
+          <% if @monthly_spending.any? %>
+            <div class="w-full">
+              <canvas id="monthlySpendingChart" width="400" height="200"></canvas>
+            </div>
+          <% else %>
+            <div class="text-center text-gray-500">
+              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+              </svg>
+              <p class="mt-2">No spending data available</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Recent Tasks -->
+      <div class="bg-white shadow-sm rounded-lg border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-medium text-gray-900">Recent Task Activity</h3>
+        </div>
+        <div class="divide-y divide-gray-200">
+          <% if @recent_tasks.any? %>
+            <% @recent_tasks.each do |task| %>
+              <div class="px-6 py-4">
+                <div class="flex items-center justify-between">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">
+                      <%= link_to task.title, project_task_path(task.project, task), 
+                          class: "hover:text-indigo-600" %>
+                    </p>
+                    <p class="text-sm text-gray-500">
+                      <%= task.project.name %> • 
+                      <%= task.assigned_user&.name || 'Unassigned' %>
+                    </p>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                      <%= case task.status
+                          when 'completed' then 'bg-green-100 text-green-800'
+                          when 'in_progress' then 'bg-blue-100 text-blue-800'
+                          when 'pending' then 'bg-yellow-100 text-yellow-800'
+                          else 'bg-gray-100 text-gray-800'
+                          end %>">
+                      <%= task.status.humanize %>
+                    </span>
+                    <span class="text-xs text-gray-400">
+                      <%= time_ago_in_words(task.updated_at) %> ago
+                    </span>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="px-6 py-8 text-center text-gray-500">
+              <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+              </svg>
+              <p class="mt-2">No recent task activity</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="bg-white shadow-sm rounded-lg border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-medium text-gray-900">Recent Financial Activity</h3>
+        </div>
+        <div class="divide-y divide-gray-200">
+          <% if @recent_transactions.any? %>
+            <% @recent_transactions.each do |transaction| %>
+              <div class="px-6 py-4">
+                <div class="flex items-center justify-between">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">
+                      <%= transaction.description %>
+                    </p>
+                    <p class="text-sm text-gray-500">
+                      <%= transaction.project.name %> • 
+                      <%= transaction.category.humanize %>
+                    </p>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <span class="text-sm font-medium 
+                      <%= transaction.transaction_type == 'income' ? 'text-green-600' : 'text-red-600' %>">
+                      <%= transaction.transaction_type == 'income' ? '+' : '-' %><%= transaction.formatted_amount %>
+                    </span>
+                    <span class="text-xs text-gray-400">
+                      <%= time_ago_in_words(transaction.created_at) %> ago
+                    </span>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="px-6 py-8 text-center text-gray-500">
+              <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+              </svg>
+              <p class="mt-2">No recent financial activity</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Project Quick Links -->
+    <% if @user_projects.any? %>
+      <div class="mt-8 bg-white shadow-sm rounded-lg border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-medium text-gray-900">Project Reports</h3>
+          <p class="text-sm text-gray-500">Detailed analytics for individual projects</p>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <% @user_projects.limit(6).each do |project| %>
+              <div class="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors">
+                <h4 class="font-medium text-gray-900 mb-2"><%= project.name %></h4>
+                <p class="text-sm text-gray-500 mb-3 line-clamp-2"><%= project.description %></p>
+                <div class="flex space-x-2">
+                  <%= link_to project_overview_reports_path(project_id: project.id),
+                      class: "text-xs text-indigo-600 hover:text-indigo-800 font-medium" do %>
+                    Overview
+                  <% end %>
+                  <%= link_to project_financial_reports_path(project_id: project.id),
+                      class: "text-xs text-indigo-600 hover:text-indigo-800 font-medium" do %>
+                    Financial
+                  <% end %>
+                  <%= link_to project_tasks_reports_path(project_id: project.id),
+                      class: "text-xs text-indigo-600 hover:text-indigo-800 font-medium" do %>
+                    Tasks
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- Chart.js Integration -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Projects by Status Chart
+    <% if @projects_by_status.any? %>
+      const projectsCtx = document.getElementById('projectsStatusChart');
+      if (projectsCtx) {
+        new Chart(projectsCtx, {
+          type: 'doughnut',
+          data: {
+            labels: <%= @projects_by_status.keys.map(&:humanize).to_json.html_safe %>,
+            datasets: [{
+              data: <%= @projects_by_status.values.to_json.html_safe %>,
+              backgroundColor: [
+                '#10B981', // green for active
+                '#F59E0B', // yellow for planning
+                '#6B7280', // gray for completed
+                '#EF4444'  // red for on_hold
+              ]
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom'
+              }
+            }
+          }
+        });
+      }
+    <% end %>
+
+    // Monthly Spending Chart
+    <% if @monthly_spending.any? %>
+      const spendingCtx = document.getElementById('monthlySpendingChart');
+      if (spendingCtx) {
+        new Chart(spendingCtx, {
+          type: 'line',
+          data: {
+            labels: <%= @monthly_spending.keys.map { |date| date.strftime('%b %Y') }.to_json.html_safe %>,
+            datasets: [{
+              label: 'Monthly Spending',
+              data: <%= @monthly_spending.values.map { |cents| cents / 100.0 }.to_json.html_safe %>,
+              borderColor: '#6366F1',
+              backgroundColor: 'rgba(99, 102, 241, 0.1)',
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function(value) {
+                    return '$' + value.toLocaleString();
+                  }
+                }
+              }
+            },
+            plugins: {
+              legend: {
+                display: false
+              }
+            }
+          }
+        });
+      }
+    <% end %>
+  });
+</script>

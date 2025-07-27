@@ -1,0 +1,236 @@
+<% content_for :title, @product.title %>
+
+<div class="min-h-screen bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-8" aria-label="Breadcrumb">
+      <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+          <%= link_to products_path, class: "inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600" do %>
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+            </svg>
+            Products
+          <% end %>
+        </li>
+        <li>
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+            </svg>
+            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2"><%= @product.title %></span>
+          </div>
+        </li>
+      </ol>
+    </nav>
+
+    <div class="lg:grid lg:grid-cols-2 lg:gap-x-8 lg:items-start">
+      <!-- Image Gallery -->
+      <div class="flex flex-col-reverse">
+        <!-- Main Image -->
+        <div class="aspect-w-1 aspect-h-1 w-full">
+          <% if @product.thumbnail_url.present? %>
+            <%= image_tag @product.thumbnail_url, 
+                alt: @product.title,
+                class: "w-full h-full object-center object-cover sm:rounded-lg" %>
+          <% else %>
+            <div class="w-full h-96 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center rounded-lg">
+              <svg class="w-24 h-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+              </svg>
+            </div>
+          <% end %>
+        </div>
+
+        <!-- Image Thumbnails -->
+        <% if @product.images.present? && @product.images.size > 1 %>
+          <div class="hidden mt-6 w-full max-w-2xl mx-auto sm:block lg:max-w-none">
+            <div class="grid grid-cols-4 gap-6">
+              <% @product.images.each do |image| %>
+                <button class="relative h-24 bg-white rounded-md flex items-center justify-center text-sm font-medium uppercase text-gray-900 cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring focus:ring-offset-4 focus:ring-indigo-500">
+                  <span class="sr-only">Image</span>
+                  <span class="absolute inset-0 rounded-md overflow-hidden">
+                    <%= image_tag image['url'], 
+                        alt: @product.title,
+                        class: "w-full h-full object-center object-cover" %>
+                  </span>
+                </button>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Product Info -->
+      <div class="mt-10 px-4 sm:px-0 sm:mt-16 lg:mt-0">
+        <h1 class="text-3xl font-extrabold tracking-tight text-gray-900"><%= @product.title %></h1>
+
+        <div class="mt-3">
+          <h2 class="sr-only">Product information</h2>
+          <p class="text-3xl text-gray-900"><%= @product.formatted_price %></p>
+        </div>
+
+        <!-- Stock Status -->
+        <div class="mt-6">
+          <% if @product.in_stock? %>
+            <div class="flex items-center">
+              <svg class="flex-shrink-0 w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              <p class="ml-2 text-sm text-gray-500">In stock (<%= @product.inventory_quantity %> available)</p>
+            </div>
+          <% else %>
+            <div class="flex items-center">
+              <svg class="flex-shrink-0 w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+              </svg>
+              <p class="ml-2 text-sm text-gray-500">Out of stock</p>
+            </div>
+          <% end %>
+        </div>
+
+        <!-- Description -->
+        <div class="mt-6">
+          <h3 class="sr-only">Description</h3>
+          <div class="text-base text-gray-700 space-y-6">
+            <%= simple_format(@product.description) %>
+          </div>
+        </div>
+
+        <!-- Add to Cart Form -->
+        <% if @product.in_stock? %>
+          <%= form_with url: add_item_carts_path, method: :post, 
+              remote: true, 
+              class: "mt-10 flex sm:flex-col1" do |form| %>
+            <%= form.hidden_field :product_id, value: @product.id %>
+            
+            <!-- Variant Selection -->
+            <% if @variants.size > 1 %>
+              <div class="mt-8">
+                <div class="flex items-justify-between">
+                  <h3 class="text-sm text-gray-900 font-medium">Variant</h3>
+                </div>
+                <fieldset class="mt-4">
+                  <legend class="sr-only">Choose a variant</legend>
+                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <% @variants.each_with_index do |variant, index| %>
+                      <label class="group relative border rounded-md py-3 px-4 flex items-center justify-center text-sm font-medium uppercase hover:bg-gray-50 focus:outline-none sm:flex-1 cursor-pointer">
+                        <%= form.radio_button :variant_id, variant['id'], 
+                            checked: index == 0,
+                            class: "sr-only" %>
+                        <span><%= variant['title'] %></span>
+                        <% if variant['prices'].present? %>
+                          <span class="ml-2 text-gray-500">
+                            <%= Money.new(variant['prices'][0]['amount'], variant['prices'][0]['currency_code']).format %>
+                          </span>
+                        <% end %>
+                        <span class="absolute -inset-px rounded-md pointer-events-none" aria-hidden="true"></span>
+                      </label>
+                    <% end %>
+                  </div>
+                </fieldset>
+              </div>
+            <% else %>
+              <%= form.hidden_field :variant_id, value: @variants.first['id'] %>
+            <% end %>
+
+            <!-- Quantity -->
+            <div class="mt-8 flex">
+              <div class="min-w-0 flex-1">
+                <%= form.label :quantity, "Quantity", class: "block text-sm font-medium text-gray-700" %>
+                <%= form.number_field :quantity, 
+                    value: 1, 
+                    min: 1, 
+                    max: @product.inventory_quantity,
+                    class: "mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %>
+              </div>
+              <div class="ml-4 flex-shrink-0 flex items-end">
+                <%= form.submit "Add to Cart", 
+                    class: "max-w-xs flex-1 bg-indigo-600 border border-transparent rounded-md py-3 px-8 flex items-center justify-center text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-full" %>
+              </div>
+            </div>
+          <% end %>
+        <% else %>
+          <div class="mt-10">
+            <button disabled class="max-w-xs flex-1 bg-gray-300 border border-transparent rounded-md py-3 px-8 flex items-center justify-center text-base font-medium text-gray-500 cursor-not-allowed sm:w-full">
+              Out of Stock
+            </button>
+          </div>
+        <% end %>
+
+        <!-- Product Details -->
+        <section class="mt-12 pt-12 border-t border-gray-200">
+          <h2 class="text-sm font-medium text-gray-900">Product Details</h2>
+          
+          <div class="mt-4 space-y-6">
+            <% if @product.collection_title.present? %>
+              <div class="flex">
+                <dt class="flex-shrink-0 w-24 text-sm font-medium text-gray-900">Collection:</dt>
+                <dd class="text-sm text-gray-700"><%= @product.collection_title %></dd>
+              </div>
+            <% end %>
+            
+            <% if @product.tags.present? %>
+              <div class="flex">
+                <dt class="flex-shrink-0 w-24 text-sm font-medium text-gray-900">Tags:</dt>
+                <dd class="text-sm text-gray-700">
+                  <div class="flex flex-wrap gap-2">
+                    <% @product.tags.each do |tag| %>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        <%= tag %>
+                      </span>
+                    <% end %>
+                  </div>
+                </dd>
+              </div>
+            <% end %>
+            
+            <div class="flex">
+              <dt class="flex-shrink-0 w-24 text-sm font-medium text-gray-900">Currency:</dt>
+              <dd class="text-sm text-gray-700"><%= @product.currency.upcase %></dd>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Related Products -->
+    <% if @related_products.any? %>
+      <section class="mt-16 pt-16 border-t border-gray-200">
+        <h2 class="text-2xl font-extrabold tracking-tight text-gray-900">Related Products</h2>
+        
+        <div class="mt-6 grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
+          <% @related_products.each do |product| %>
+            <div class="group relative">
+              <div class="w-full min-h-80 bg-gray-200 aspect-w-1 aspect-h-1 rounded-md overflow-hidden group-hover:opacity-75 lg:h-80 lg:aspect-none">
+                <% if product.thumbnail_url.present? %>
+                  <%= image_tag product.thumbnail_url, 
+                      alt: product.title,
+                      class: "w-full h-full object-center object-cover lg:w-full lg:h-full" %>
+                <% else %>
+                  <div class="w-full h-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                    <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
+                  </div>
+                <% end %>
+              </div>
+              <div class="mt-4 flex justify-between">
+                <div>
+                  <h3 class="text-sm text-gray-700">
+                    <%= link_to product.title, product_path(product) do %>
+                      <span aria-hidden="true" class="absolute inset-0"></span>
+                      <%= product.title %>
+                    <% end %>
+                  </h3>
+                  <p class="mt-1 text-sm text-gray-500"><%= product.collection_title %></p>
+                </div>
+                <p class="text-sm font-medium text-gray-900"><%= product.formatted_price %></p>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+  </div>
+</div>

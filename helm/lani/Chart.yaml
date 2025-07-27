@@ -1,0 +1,39 @@
+apiVersion: v2
+name: lani
+description: A comprehensive project management and collaboration platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+home: https://github.com/your-org/lani
+sources:
+  - https://github.com/your-org/lani
+maintainers:
+  - name: Lani Team
+    email: team@lani.dev
+keywords:
+  - project-management
+  - collaboration
+  - rails
+  - ruby
+  - postgresql
+  - redis
+  - sidekiq
+annotations:
+  category: ProjectManagement
+dependencies:
+  - name: postgresql
+    version: "12.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: redis
+    version: "17.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+  - name: nginx-ingress
+    version: "4.x.x"
+    repository: https://kubernetes.github.io/ingress-nginx
+    condition: ingress.enabled
+  - name: cert-manager
+    version: "1.x.x"
+    repository: https://charts.jetstack.io
+    condition: certManager.enabled

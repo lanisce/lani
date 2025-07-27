@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+
+# Ensure Logger is available before anything else
+require 'logger'
+
+# Load bundler and gems
+require_relative '../config/boot'
+
+# Load Rails application
+require_relative '../config/application'
+
+# Initialize Rails
+Rails.application.initialize!
+
+# Use Rack::Server directly
+require 'rack'
+
+# Create a simple Rack server
+app = Rails.application
+
+# Start server using Rack::Server
+Rack::Server.start(
+  app: app,
+  Host: '0.0.0.0',
+  Port: 3000,
+  environment: 'development'
+)

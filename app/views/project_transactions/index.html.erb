@@ -1,0 +1,276 @@
+<% content_for :title, "#{@project.name} - Transactions" %>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Breadcrumb -->
+  <nav class="flex mb-6" aria-label="Breadcrumb">
+    <ol class="flex items-center space-x-4">
+      <li>
+        <%= link_to "Projects", projects_path, class: "text-gray-500 hover:text-gray-700" %>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+          <%= link_to @project.name, project_path(@project), class: "ml-4 text-gray-500 hover:text-gray-700" %>
+        </div>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+          <span class="ml-4 text-gray-700 font-medium">Transactions</span>
+        </div>
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Page Header -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Project Transactions</h1>
+        <p class="text-gray-600 mt-2">Track income and expenses for this project</p>
+      </div>
+      <div class="flex space-x-3">
+        <%= link_to "View Budgets", project_budgets_path(@project), class: "btn-secondary" %>
+        <%= link_to "Financial Summary", summary_project_transactions_path(@project), class: "btn-secondary" %>
+        <%= link_to "New Transaction", new_project_transaction_path(@project), class: "btn-primary" %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Financial Overview -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-5">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <svg class="h-8 w-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+            </svg>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">Total Income</dt>
+              <dd class="text-lg font-medium text-green-600"><%= number_to_currency(@total_income) %></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-5">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <svg class="h-8 w-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">Total Expenses</dt>
+              <dd class="text-lg font-medium text-red-600"><%= number_to_currency(@total_expenses) %></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-5">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <svg class="h-8 w-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">Net Amount</dt>
+              <dd class="text-lg font-medium <%= @net_amount >= 0 ? 'text-green-600' : 'text-red-600' %>">
+                <%= number_to_currency(@net_amount) %>
+              </dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-5">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+            </svg>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">Transactions</dt>
+              <dd class="text-lg font-medium text-gray-900"><%= @transactions.total_count %></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h3 class="text-lg font-medium text-gray-900">Filter Transactions</h3>
+    </div>
+    <div class="p-6">
+      <%= form_with url: project_transactions_path(@project), method: :get, local: true, class: "grid grid-cols-1 md:grid-cols-4 gap-4" do |form| %>
+        <div>
+          <%= form.label :type, "Type", class: "block text-sm font-medium text-gray-700 mb-2" %>
+          <%= form.select :type, 
+              options_for_select([['All Types', ''], ['Income', 'income'], ['Expenses', 'expense']], params[:type]),
+              {},
+              { class: "form-select w-full" } %>
+        </div>
+        
+        <div>
+          <%= form.label :category, "Category", class: "block text-sm font-medium text-gray-700 mb-2" %>
+          <%= form.select :category, 
+              options_for_select([['All Categories', '']] + @categories.map { |cat| [cat.humanize, cat] }, params[:category]),
+              {},
+              { class: "form-select w-full" } %>
+        </div>
+        
+        <div class="flex items-end">
+          <%= form.submit "Filter", class: "btn-secondary w-full" %>
+        </div>
+        
+        <div class="flex items-end">
+          <%= link_to "Clear Filters", project_transactions_path(@project), class: "btn-outline w-full text-center" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Maybe-style Transactions List -->
+  <div class="bg-white shadow-sm rounded-xl border border-gray-100">
+    <div class="px-6 py-4 border-b border-gray-100">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-gray-900">Recent Transactions</h3>
+        <div class="flex items-center space-x-3">
+          <!-- Maybe-style view toggle -->
+          <div class="flex items-center bg-gray-100 rounded-lg p-1">
+            <button class="px-3 py-1 text-sm font-medium rounded-md bg-white text-gray-900 shadow-sm">List</button>
+            <button class="px-3 py-1 text-sm font-medium text-gray-500 hover:text-gray-900">Chart</button>
+          </div>
+          
+          <!-- Maybe API sync button -->
+          <%= link_to sync_maybe_path(project_id: @project.id), method: :post,
+              class: "inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500",
+              confirm: "This will sync transaction data from Maybe Finance. Continue?" do %>
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Sync with Maybe
+          <% end %>
+        </div>
+      </div>
+    </div>
+    
+    <% if @transactions.any? %>
+      <!-- Maybe-style transaction rows -->
+      <div class="divide-y divide-gray-100">
+        <% @transactions.each do |transaction| %>
+          <%= render 'shared/maybe_transaction_row', transaction: transaction, project: @project %>
+        <% end %>
+      </div>
+      
+      <!-- Maybe-style pagination -->
+      <% if @transactions.respond_to?(:total_pages) && @transactions.total_pages > 1 %>
+        <div class="px-6 py-4 border-t border-gray-100">
+          <div class="flex items-center justify-between">
+            <div class="text-sm text-gray-500">
+              Showing <%= @transactions.offset_value + 1 %> to <%= [@transactions.offset_value + @transactions.limit_value, @transactions.total_count].min %> of <%= @transactions.total_count %> transactions
+            </div>
+            <div class="flex items-center space-x-2">
+              <% if @transactions.prev_page %>
+                <%= link_to "Previous", project_transactions_path(@project, page: @transactions.prev_page), 
+                    class: "px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50" %>
+              <% end %>
+              <% if @transactions.next_page %>
+                <%= link_to "Next", project_transactions_path(@project, page: @transactions.next_page), 
+                    class: "px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50" %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+      
+      <!-- Pagination -->
+      <div class="px-6 py-4 border-t border-gray-200">
+        <%= paginate @transactions, theme: 'twitter_bootstrap_4' if respond_to?(:paginate) %>
+      </div>
+    <% else %>
+      <div class="px-6 py-8 text-center">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5l7-7 7 7M9 20h6" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No transactions yet</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by recording your first income or expense.</p>
+        <div class="mt-6 flex justify-center space-x-3">
+          <%= link_to "Record Income", new_project_transaction_path(@project, type: 'income'), class: "btn-secondary" %>
+          <%= link_to "Record Expense", new_project_transaction_path(@project, type: 'expense'), class: "btn-primary" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+        <div class="space-y-3">
+          <%= link_to new_project_transaction_path(@project, type: 'expense'), 
+              class: "flex items-center p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors" do %>
+            <svg class="h-6 w-6 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <span class="text-sm font-medium text-gray-900">Record Expense</span>
+          <% end %>
+          
+          <%= link_to new_project_transaction_path(@project, type: 'income'), 
+              class: "flex items-center p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors" do %>
+            <svg class="h-6 w-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+            </svg>
+            <span class="text-sm font-medium text-gray-900">Record Income</span>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Active Budgets</h3>
+        <% if @budgets.any? %>
+          <div class="space-y-2">
+            <% @budgets.limit(3).each do |budget| %>
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-sm font-medium text-gray-900"><%= budget.name %></span>
+                <span class="text-sm text-gray-500">
+                  <%= number_to_currency(budget.remaining_amount) %> left
+                </span>
+              </div>
+            <% end %>
+          </div>
+          <div class="mt-3">
+            <%= link_to "View All Budgets", project_budgets_path(@project), class: "text-sm text-blue-600 hover:text-blue-700" %>
+          </div>
+        <% else %>
+          <p class="text-sm text-gray-500">No active budgets. <%= link_to "Create one", new_project_budget_path(@project), class: "text-blue-600 hover:text-blue-700" %> to start tracking expenses.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

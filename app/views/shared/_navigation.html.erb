@@ -1,0 +1,139 @@
+<nav class="bg-white shadow-sm border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between h-16">
+      <!-- Primary Navigation -->
+      <div class="flex">
+        <!-- Logo -->
+        <div class="flex-shrink-0 flex items-center">
+          <%= link_to root_path, class: "flex items-center space-x-2" do %>
+            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <span class="text-white font-bold text-sm">L</span>
+            </div>
+            <span class="text-xl font-bold text-gray-900">Lani</span>
+          <% end %>
+        </div>
+
+        <!-- Main Navigation -->
+        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+          <%= link_to projects_path, 
+              class: "#{current_page?(projects_path) || params[:controller] == 'projects' ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" do %>
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            Projects
+          <% end %>
+
+          <% if current_user&.admin? %>
+            <%= link_to admin_dashboard_index_path, 
+                class: "#{params[:controller]&.start_with?('admin/') ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" do %>
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Admin
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Context Navigation (Project/Task specific) -->
+      <% if @project.present? %>
+        <div class="hidden sm:flex sm:items-center sm:space-x-4">
+          <!-- Project Context Menu -->
+          <div class="flex items-center space-x-1 text-sm text-gray-500">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <%= link_to @project.name, project_path(@project), class: "font-medium text-gray-900 hover:text-blue-600" %>
+          </div>
+
+          <!-- Project Quick Actions -->
+          <div class="flex items-center space-x-2">
+            <%= link_to project_path(@project), 
+                class: "#{current_page?(project_path(@project)) ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700'} px-3 py-1 rounded-md text-sm font-medium" do %>
+              Overview
+            <% end %>
+            
+            <%= link_to project_tasks_path(@project), 
+                class: "#{params[:controller] == 'tasks' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700'} px-3 py-1 rounded-md text-sm font-medium" do %>
+              Tasks
+            <% end %>
+            
+            <%= link_to project_budgets_path(@project), 
+                class: "#{params[:controller] == 'project_budgets' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700'} px-3 py-1 rounded-md text-sm font-medium" do %>
+              Budget
+            <% end %>
+            
+            <%= link_to project_files_path(@project), 
+                class: "#{params[:controller] == 'project_files' ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700'} px-3 py-1 rounded-md text-sm font-medium" do %>
+              Files
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- User Menu -->
+      <div class="flex items-center">
+        <% if user_signed_in? %>
+          <div class="ml-3 relative">
+            <div class="flex items-center space-x-3">
+              <span class="text-sm text-gray-700">
+                Welcome, <%= current_user.display_name %>
+              </span>
+              <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                <span class="text-sm font-medium text-gray-700">
+                  <%= current_user.display_name.first.upcase %>
+                </span>
+              </div>
+              <%= link_to destroy_user_session_path, method: :delete, 
+                  class: "text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium" do %>
+                Sign out
+              <% end %>
+            </div>
+          </div>
+        <% else %>
+          <div class="flex items-center space-x-4">
+            <%= link_to "Sign in", new_user_session_path, 
+                class: "text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium" %>
+            <%= link_to "Sign up", new_user_registration_path, 
+                class: "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium" %>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Mobile menu button -->
+      <div class="flex items-center sm:hidden">
+        <button type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500" 
+                onclick="toggleMobileMenu()">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile menu -->
+  <div id="mobile-menu" class="hidden sm:hidden">
+    <div class="pt-2 pb-3 space-y-1">
+      <%= link_to projects_path, 
+          class: "#{current_page?(projects_path) || params[:controller] == 'projects' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium" do %>
+        Projects
+      <% end %>
+      
+      <% if current_user&.admin? %>
+        <%= link_to admin_dashboard_index_path, 
+            class: "#{params[:controller]&.start_with?('admin/') ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium" do %>
+          Admin
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</nav>
+
+<script>
+function toggleMobileMenu() {
+  const menu = document.getElementById('mobile-menu');
+  menu.classList.toggle('hidden');
+}
+</script>

@@ -1,0 +1,113 @@
+<%# Maybe Finance-style budget card component %>
+<%# Direct reuse of Maybe's budget UI patterns %>
+
+<% 
+  spent_percentage = budget.spent_amount > 0 ? (budget.spent_amount / budget.amount * 100).round(1) : 0
+  remaining = budget.amount - budget.spent_amount
+  status_class = case
+    when spent_percentage >= 100 then 'over-budget'
+    when spent_percentage >= 80 then 'warning'
+    when spent_percentage >= 60 then 'caution'
+    else 'good'
+  end
+%>
+
+<!-- Maybe-style budget card -->
+<div class="bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors duration-200">
+  <div class="p-6">
+    <!-- Header with category and amount -->
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+          <span class="text-lg"><%= budget.category_icon || "💰" %></span>
+        </div>
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900"><%= budget.name %></h3>
+          <p class="text-sm text-gray-500"><%= budget.category.humanize %></p>
+        </div>
+      </div>
+      
+      <!-- Maybe-style amount display -->
+      <div class="text-right">
+        <div class="text-2xl font-bold text-gray-900">
+          $<%= number_with_delimiter(budget.amount, precision: 2) %>
+        </div>
+        <div class="text-sm text-gray-500">budgeted</div>
+      </div>
+    </div>
+
+    <!-- Maybe-style progress bar -->
+    <div class="mb-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-medium text-gray-700">
+          $<%= number_with_delimiter(budget.spent_amount, precision: 2) %> spent
+        </span>
+        <span class="text-sm text-gray-500">
+          <%= spent_percentage %>%
+        </span>
+      </div>
+      
+      <!-- Progress bar with Maybe's exact styling -->
+      <div class="w-full bg-gray-200 rounded-full h-2">
+        <div class="h-2 rounded-full transition-all duration-300 <%= 
+          case status_class
+          when 'over-budget' then 'bg-red-500'
+          when 'warning' then 'bg-yellow-500'  
+          when 'caution' then 'bg-orange-500'
+          else 'bg-green-500'
+          end
+        %>" style="width: <%= [spent_percentage, 100].min %>%"></div>
+      </div>
+    </div>
+
+    <!-- Maybe-style remaining amount -->
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <span class="text-sm font-medium <%= remaining >= 0 ? 'text-green-600' : 'text-red-600' %>">
+          <%= remaining >= 0 ? 'Remaining:' : 'Over budget:' %>
+        </span>
+        <span class="text-sm font-bold <%= remaining >= 0 ? 'text-green-600' : 'text-red-600' %>">
+          $<%= number_with_delimiter(remaining.abs, precision: 2) %>
+        </span>
+      </div>
+      
+      <!-- Maybe-style status indicator -->
+      <div class="flex items-center space-x-1">
+        <div class="w-2 h-2 rounded-full <%= 
+          case status_class
+          when 'over-budget' then 'bg-red-500'
+          when 'warning' then 'bg-yellow-500'
+          when 'caution' then 'bg-orange-500'
+          else 'bg-green-500'
+          end
+        %>"></div>
+        <span class="text-xs font-medium text-gray-600 capitalize">
+          <%= status_class.gsub('-', ' ') %>
+        </span>
+      </div>
+    </div>
+
+    <!-- Maybe-style quick actions -->
+    <div class="mt-4 pt-4 border-t border-gray-100">
+      <div class="flex items-center justify-between">
+        <div class="flex space-x-2">
+          <%= link_to "Add Expense", new_project_transaction_path(project, budget_id: budget.id), 
+              class: "inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" %>
+          
+          <%= link_to "View Details", project_budget_path(project, budget), 
+              class: "inline-flex items-center px-3 py-1 text-xs font-medium text-blue-600 hover:text-blue-700" %>
+        </div>
+        
+        <!-- Maybe-style edit button -->
+        <% if policy(budget).edit? %>
+          <%= link_to edit_project_budget_path(project, budget), 
+              class: "text-gray-400 hover:text-gray-600 transition-colors duration-150" do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

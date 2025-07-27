@@ -1,0 +1,190 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lani-config
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: config
+data:
+  RAILS_ENV: "production"
+  RAILS_SERVE_STATIC_FILES: "true"
+  RAILS_LOG_TO_STDOUT: "true"
+  RAILS_MAX_THREADS: "5"
+  WEB_CONCURRENCY: "2"
+  
+  # Database Configuration (non-sensitive)
+  DATABASE_POOL: "25"
+  DATABASE_TIMEOUT: "5000"
+  
+  # Redis Configuration (non-sensitive)
+  REDIS_TIMEOUT: "1"
+  REDIS_DB: "0"
+  
+  # Application Configuration
+  TIME_ZONE: "UTC"
+  DEFAULT_LOCALE: "en"
+  
+  # External Service URLs (non-sensitive)
+  OPENPROJECT_API_URL: "https://openproject.example.com/api/v3"
+  MAYBE_API_URL: "https://maybe.example.com/api"
+  NEXTCLOUD_URL: "https://nextcloud.example.com"
+  MEDUSA_API_URL: "https://medusa.example.com"
+  
+  # Feature Flags
+  ENABLE_OPENPROJECT_INTEGRATION: "true"
+  ENABLE_MAYBE_INTEGRATION: "true"
+  ENABLE_NEXTCLOUD_INTEGRATION: "true"
+  ENABLE_MEDUSA_INTEGRATION: "true"
+  ENABLE_MAPBOX_INTEGRATION: "true"
+  
+  # Performance Configuration
+  CACHE_STORE: "redis_cache_store"
+  CACHE_NAMESPACE: "lani_cache"
+  CACHE_EXPIRES_IN: "3600"
+  
+  # Job Queue Configuration
+  ACTIVE_JOB_QUEUE_ADAPTER: "sidekiq"
+  SIDEKIQ_CONCURRENCY: "10"
+  
+  # Logging Configuration
+  LOG_LEVEL: "info"
+  LOG_TAGS: "request_id"
+  
+  # Security Configuration (non-sensitive)
+  FORCE_SSL: "true"
+  SESSION_TIMEOUT: "7200"
+  
+  # File Upload Configuration
+  MAX_FILE_SIZE: "10485760"  # 10MB
+  ALLOWED_FILE_TYPES: "jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,ppt,pptx"
+  
+  # Email Configuration (non-sensitive)
+  SMTP_PORT: "587"
+  SMTP_AUTHENTICATION: "plain"
+  SMTP_ENABLE_STARTTLS_AUTO: "true"
+  
+  # Monitoring Configuration
+  HEALTH_CHECK_PATH: "/health"
+  METRICS_PATH: "/metrics"
+  
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lani-nginx-config
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: nginx-config
+data:
+  nginx.conf: |
+    upstream lani_app {
+        server lani-web:3000;
+    }
+    
+    # Rate limiting
+    limit_req_zone $binary_remote_addr zone=login:10m rate=5r/m;
+    limit_req_zone $binary_remote_addr zone=api:10m rate=100r/m;
+    
+    server {
+        listen 80;
+        server_name _;
+        return 301 https://$host$request_uri;
+    }
+    
+    server {
+        listen 443 ssl http2;
+        server_name lani.dev www.lani.dev;
+        
+        # SSL Configuration
+        ssl_certificate /etc/nginx/ssl/tls.crt;
+        ssl_certificate_key /etc/nginx/ssl/tls.key;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;
+        ssl_prefer_server_ciphers off;
+        ssl_session_cache shared:SSL:10m;
+        ssl_session_timeout 10m;
+        
+        # Security Headers
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        add_header X-Content-Type-Options nosniff always;
+        add_header X-Frame-Options DENY always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://api.mapbox.com https://js.stripe.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.mapbox.com https://api.stripe.com;" always;
+        
+        # Gzip Compression
+        gzip on;
+        gzip_vary on;
+        gzip_min_length 1024;
+        gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
+        
+        # Client body size
+        client_max_body_size 10M;
+        
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        
+        # Health check endpoint
+        location /health {
+            access_log off;
+            proxy_pass http://lani_app;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        
+        # API endpoints with rate limiting
+        location /api/ {
+            limit_req zone=api burst=20 nodelay;
+            proxy_pass http://lani_app;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        
+        # Login endpoints with stricter rate limiting
+        location ~ ^/(users/sign_in|users/sign_up|users/password) {
+            limit_req zone=login burst=5 nodelay;
+            proxy_pass http://lani_app;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        
+        # Static assets with caching
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+            proxy_pass http://lani_app;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        
+        # All other requests
+        location / {
+            proxy_pass http://lani_app;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Server $host;
+        }
+        
+        # Error pages
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+            root /usr/share/nginx/html;
+        }
+    }

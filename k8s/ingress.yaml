@@ -1,0 +1,303 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lani-ingress
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: ingress
+  annotations:
+    # Nginx Ingress Controller
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
+    
+    # Security Headers
+    nginx.ingress.kubernetes.io/server-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+      add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://api.mapbox.com https://js.stripe.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.mapbox.com https://api.stripe.com; frame-src https://js.stripe.com;" always;
+    
+    # Rate Limiting
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/rate-limit-connections: "10"
+    
+    # Compression
+    nginx.ingress.kubernetes.io/enable-compression: "true"
+    nginx.ingress.kubernetes.io/compression-level: "6"
+    
+    # SSL/TLS
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.2 TLSv1.3"
+    nginx.ingress.kubernetes.io/ssl-ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256,ECDHE-RSA-AES128-GCM-SHA256,ECDHE-ECDSA-AES256-GCM-SHA384,ECDHE-RSA-AES256-GCM-SHA384"
+    
+    # Caching
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+      }
+      
+      location ~* \.(html|json)$ {
+        expires 1h;
+        add_header Cache-Control "public, must-revalidate";
+      }
+    
+    # Health Check Exclusions
+    nginx.ingress.kubernetes.io/server-snippet: |
+      location /health {
+        access_log off;
+      }
+      
+      location /metrics {
+        access_log off;
+        allow 10.0.0.0/8;
+        allow 172.16.0.0/12;
+        allow 192.168.0.0/16;
+        deny all;
+      }
+
+spec:
+  tls:
+    - hosts:
+        - lani.yourdomain.com
+        - www.lani.yourdomain.com
+      secretName: lani-tls-secret
+  rules:
+    - host: lani.yourdomain.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: lani-web
+                port:
+                  number: 3000
+    - host: www.lani.yourdomain.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: lani-web
+                port:
+                  number: 3000
+
+---
+# Certificate Issuer for Let's Encrypt
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: certificate-issuer
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@yourdomain.com
+    privateKeySecretRef:
+      name: letsencrypt-prod-private-key
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+
+---
+# Staging Certificate Issuer
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: certificate-issuer
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: admin@yourdomain.com
+    privateKeySecretRef:
+      name: letsencrypt-staging-private-key
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+
+---
+# Certificate Resource
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: lani-tls-certificate
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: certificate
+spec:
+  secretName: lani-tls-secret
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - lani.yourdomain.com
+    - www.lani.yourdomain.com
+
+---
+# Network Policy for Ingress Traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: lani-ingress-network-policy
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: lani
+      app.kubernetes.io/instance: lani-production
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow ingress from nginx ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
+    # Allow health checks from within namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: lani-production
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # Allow egress to PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgresql
+              app.kubernetes.io/instance: lani-production
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow egress to Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+              app.kubernetes.io/instance: lani-production
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Allow egress to external APIs (DNS, HTTPS)
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+
+---
+# Middleware for additional security (Traefik alternative)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lani-nginx-middleware
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: middleware
+data:
+  nginx.conf: |
+    # Rate limiting zones
+    limit_req_zone $binary_remote_addr zone=login:10m rate=5r/m;
+    limit_req_zone $binary_remote_addr zone=api:10m rate=100r/m;
+    limit_req_zone $binary_remote_addr zone=general:10m rate=10r/s;
+    
+    # Connection limiting
+    limit_conn_zone $binary_remote_addr zone=conn_limit_per_ip:10m;
+    
+    server {
+        listen 80;
+        server_name lani.yourdomain.com www.lani.yourdomain.com;
+        
+        # Security headers
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        
+        # Rate limiting by location
+        location /users/sign_in {
+            limit_req zone=login burst=3 nodelay;
+            proxy_pass http://lani-web:3000;
+        }
+        
+        location /api/ {
+            limit_req zone=api burst=20 nodelay;
+            proxy_pass http://lani-web:3000;
+        }
+        
+        location / {
+            limit_req zone=general burst=10 nodelay;
+            limit_conn conn_limit_per_ip 10;
+            proxy_pass http://lani-web:3000;
+        }
+        
+        # Static assets with long cache
+        location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+            proxy_pass http://lani-web:3000;
+        }
+        
+        # Health checks without logging
+        location /health {
+            access_log off;
+            proxy_pass http://lani-web:3000;
+        }
+        
+        # Block common attack patterns
+        location ~* \.(php|asp|aspx|jsp)$ {
+            return 444;
+        }
+        
+        location ~* /\.(git|svn|hg) {
+            return 444;
+        }
+        
+        location ~* /(wp-admin|wp-login|admin|phpmyadmin) {
+            return 444;
+        }
+    }

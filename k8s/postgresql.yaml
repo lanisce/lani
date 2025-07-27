@@ -1,0 +1,261 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: lani-postgresql
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: database
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: postgresql
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: lani-production
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: lani-postgresql
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: database
+spec:
+  serviceName: lani-postgresql
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/instance: lani-production
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgresql
+        app.kubernetes.io/instance: lani-production
+        app.kubernetes.io/component: database
+    spec:
+      securityContext:
+        fsGroup: 1001
+      containers:
+        - name: postgresql
+          image: postgres:15
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 1001
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: POSTGRES_DB
+              value: lani_production
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: lani-postgresql-secret
+                  key: postgres-password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - name: postgresql
+              containerPort: 5432
+              protocol: TCP
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - exec pg_isready -U postgres -h 127.0.0.1 -p 5432
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - -e
+                - |
+                  exec pg_isready -U postgres -h 127.0.0.1 -p 5432
+                  [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 250m
+            limits:
+              memory: 1Gi
+              cpu: 1000m
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: init-scripts
+          configMap:
+            name: lani-postgresql-init
+            defaultMode: 0755
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Gi
+        storageClassName: fast-ssd
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lani-postgresql-init
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: database
+data:
+  01-init.sql: |
+    -- Create extensions
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+    CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
+    
+    -- Performance tuning
+    ALTER SYSTEM SET shared_preload_libraries = 'pg_stat_statements';
+    ALTER SYSTEM SET max_connections = 200;
+    ALTER SYSTEM SET shared_buffers = '256MB';
+    ALTER SYSTEM SET effective_cache_size = '1GB';
+    ALTER SYSTEM SET work_mem = '4MB';
+    ALTER SYSTEM SET maintenance_work_mem = '64MB';
+    ALTER SYSTEM SET checkpoint_completion_target = 0.9;
+    ALTER SYSTEM SET wal_buffers = '16MB';
+    ALTER SYSTEM SET default_statistics_target = 100;
+    ALTER SYSTEM SET random_page_cost = 1.1;
+    ALTER SYSTEM SET effective_io_concurrency = 200;
+    
+    -- Logging configuration
+    ALTER SYSTEM SET log_destination = 'stderr';
+    ALTER SYSTEM SET logging_collector = on;
+    ALTER SYSTEM SET log_directory = 'pg_log';
+    ALTER SYSTEM SET log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log';
+    ALTER SYSTEM SET log_min_duration_statement = 1000;
+    ALTER SYSTEM SET log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h ';
+    ALTER SYSTEM SET log_checkpoints = on;
+    ALTER SYSTEM SET log_connections = on;
+    ALTER SYSTEM SET log_disconnections = on;
+    ALTER SYSTEM SET log_lock_waits = on;
+    ALTER SYSTEM SET log_temp_files = 0;
+    
+    -- Reload configuration
+    SELECT pg_reload_conf();
+
+---
+# External PostgreSQL Service (for external database)
+apiVersion: v1
+kind: Service
+metadata:
+  name: lani-postgresql-external
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: postgresql-external
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: database-external
+spec:
+  type: ExternalName
+  externalName: your-external-postgres.amazonaws.com
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
+
+---
+# PostgreSQL Backup CronJob
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: lani-postgresql-backup
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: postgresql-backup
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: backup
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: postgres-backup
+            image: postgres:15
+            env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: lani-postgresql-secret
+                  key: postgres-password
+            command:
+            - /bin/bash
+            - -c
+            - |
+              BACKUP_FILE="/backups/lani-backup-$(date +%Y%m%d-%H%M%S).sql"
+              pg_dump -h lani-postgresql -U postgres -d lani_production > $BACKUP_FILE
+              
+              # Compress backup
+              gzip $BACKUP_FILE
+              
+              # Upload to S3 (if configured)
+              if [ -n "$AWS_ACCESS_KEY_ID" ]; then
+                aws s3 cp ${BACKUP_FILE}.gz s3://$S3_BACKUP_BUCKET/postgresql/
+              fi
+              
+              # Keep only last 7 days of backups locally
+              find /backups -name "lani-backup-*.sql.gz" -mtime +7 -delete
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backups
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: lani-backup-pvc
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lani-backup-pvc
+  namespace: lani-production
+  labels:
+    app.kubernetes.io/name: backup-storage
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/component: backup
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: standard

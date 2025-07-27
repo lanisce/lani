@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+
+# Ensure Logger is available before Rails loads
+require 'logger'
+
+# Set up the Rails environment
+ENV['RAILS_ENV'] ||= 'development'
+
+# Load the Rails application
+require_relative '../config/boot'
+require_relative '../config/environment'
+
+# Start the Rails server
+require 'rails/commands/server/server_command'
+
+# Configure server options
+options = {
+  Host: '0.0.0.0',
+  Port: 3000,
+  environment: ENV['RAILS_ENV']
+}
+
+# Start the server
+Rails::Command::ServerCommand.new([], options).perform

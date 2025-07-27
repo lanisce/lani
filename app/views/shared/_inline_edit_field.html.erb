@@ -1,0 +1,98 @@
+<%# OpenProject-inspired inline editing field component %>
+<%# Usage: render 'shared/inline_edit_field', resource: @project, attribute: :name, value: @project.name, url: project_path(@project) %>
+
+<% 
+  resource_name = resource.class.name.downcase
+  field_id = "#{resource_name}_#{resource.id}_#{attribute}"
+  can_edit = policy(resource).update? if defined?(policy)
+  can_edit ||= true # fallback
+%>
+
+<div class="inline-edit-field" 
+     data-controller="inline-edit"
+     data-inline-edit-resource-value="<%= resource_name %>"
+     data-inline-edit-attribute-value="<%= attribute %>"
+     data-inline-edit-url-value="<%= url %>"
+     data-inline-edit-method-value="PATCH">
+  
+  <!-- Display Mode (OpenProject pattern) -->
+  <div class="display-field" data-inline-edit-target="display">
+    <div class="flex items-center group">
+      <span class="<%= css_classes || 'text-gray-900' %>">
+        <%= value.present? ? value : content_tag(:span, placeholder || "Click to edit", class: "text-gray-400 italic") %>
+      </span>
+      
+      <% if can_edit %>
+        <button type="button" 
+                class="ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-gray-400 hover:text-blue-600"
+                data-action="click->inline-edit#edit"
+                title="Edit <%= attribute.to_s.humanize %>">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </button>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Edit Mode (OpenProject pattern) -->
+  <% if can_edit %>
+    <div class="edit-field hidden" data-inline-edit-target="edit">
+      <div class="flex items-center space-x-2">
+        <% if input_type == :textarea %>
+          <textarea 
+            data-inline-edit-target="input"
+            data-action="keydown->inline-edit#handleKeydown"
+            class="flex-1 min-w-0 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            rows="<%= rows || 3 %>"
+            placeholder="<%= placeholder %>"><%= value %></textarea>
+        <% elsif input_type == :select %>
+          <select 
+            data-inline-edit-target="input"
+            class="flex-1 min-w-0 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+            <% options.each do |option_value, option_text| %>
+              <option value="<%= option_value %>" <%= 'selected' if option_value.to_s == value.to_s %>>
+                <%= option_text %>
+              </option>
+            <% end %>
+          </select>
+        <% else %>
+          <input 
+            type="<%= input_type || 'text' %>"
+            data-inline-edit-target="input"
+            data-action="keydown->inline-edit#handleKeydown"
+            value="<%= value %>"
+            class="flex-1 min-w-0 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            placeholder="<%= placeholder %>" />
+        <% end %>
+        
+        <!-- OpenProject-style action buttons -->
+        <div class="flex items-center space-x-1">
+          <button type="button"
+                  data-inline-edit-target="save"
+                  data-action="click->inline-edit#save"
+                  class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            Save
+          </button>
+          
+          <button type="button"
+                  data-inline-edit-target="cancel"
+                  data-action="click->inline-edit#cancel"
+                  class="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Cancel
+          </button>
+        </div>
+      </div>
+      
+      <% if help_text.present? %>
+        <p class="mt-1 text-xs text-gray-500"><%= help_text %></p>
+      <% end %>
+    </div>
+  <% end %>
+</div>

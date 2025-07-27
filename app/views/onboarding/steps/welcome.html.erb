@@ -1,0 +1,110 @@
+<% content_for :title, "Welcome to Lani" %>
+
+<div class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8">
+    <!-- Progress Bar -->
+    <div class="w-full bg-gray-200 rounded-full h-2">
+      <div class="bg-indigo-600 h-2 rounded-full transition-all duration-300" style="width: <%= @progress_percentage %>%"></div>
+    </div>
+    
+    <!-- Header -->
+    <div class="text-center">
+      <div class="mx-auto h-12 w-12 bg-indigo-100 rounded-full flex items-center justify-center">
+        <svg class="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+        </svg>
+      </div>
+      <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+        Welcome to Lani, <%= @user_name %>! 👋
+      </h2>
+      <p class="mt-2 text-sm text-gray-600">
+        Let's get you set up with everything you need to manage your projects effectively.
+      </p>
+    </div>
+
+    <!-- Welcome Content -->
+    <div class="bg-white shadow-sm rounded-lg p-6 space-y-6">
+      <div class="text-center">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">What makes Lani special?</h3>
+        
+        <div class="grid grid-cols-1 gap-4">
+          <div class="flex items-start space-x-3">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="text-left">
+              <h4 class="text-sm font-medium text-gray-900">Unified Project Management</h4>
+              <p class="text-sm text-gray-500">All your project tools in one place with familiar interfaces</p>
+            </div>
+          </div>
+          
+          <div class="flex items-start space-x-3">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="text-left">
+              <h4 class="text-sm font-medium text-gray-900">Real API Integration</h4>
+              <p class="text-sm text-gray-500">Direct sync with OpenProject, Maybe Finance, Nextcloud & more</p>
+            </div>
+          </div>
+          
+          <div class="flex items-start space-x-3">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="text-left">
+              <h4 class="text-sm font-medium text-gray-900">Advanced Analytics</h4>
+              <p class="text-sm text-gray-500">Comprehensive reporting and insights across all your projects</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Time Estimate -->
+      <div class="bg-indigo-50 rounded-lg p-4">
+        <div class="flex items-center">
+          <svg class="w-5 h-5 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span class="text-sm font-medium text-indigo-900">This setup takes about 5 minutes</span>
+        </div>
+        <p class="text-sm text-indigo-700 mt-1">We'll help you create your first project and explore key features</p>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="flex justify-between items-center">
+      <%= link_to skip_onboarding_path, 
+          method: :post,
+          data: { confirm: "Are you sure you want to skip the onboarding? You can restart it later from your profile." },
+          class: "text-sm text-gray-500 hover:text-gray-700" do %>
+        Skip for now
+      <% end %>
+      
+      <%= link_to onboarding_step_path('profile_setup'), 
+          class: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" do %>
+        Let's get started
+        <svg class="ml-2 -mr-1 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+        </svg>
+      <% end %>
+    </div>
+    
+    <!-- Step Indicator -->
+    <div class="text-center">
+      <span class="text-xs text-gray-500">Step <%= @step_index + 1 %> of <%= @total_steps %></span>
+    </div>
+  </div>
+</div>

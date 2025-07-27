@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lani-production
+  labels:
+    name: lani-production
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-production
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: namespace
+    app.kubernetes.io/part-of: lani-platform
+    app.kubernetes.io/managed-by: kubectl
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lani-staging
+  labels:
+    name: lani-staging
+    app.kubernetes.io/name: lani
+    app.kubernetes.io/instance: lani-staging
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: namespace
+    app.kubernetes.io/part-of: lani-platform
+    app.kubernetes.io/managed-by: kubectl

@@ -1,0 +1,181 @@
+<% content_for :title, "Products" %>
+
+<div class="min-h-screen bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Products</h1>
+        <p class="mt-2 text-gray-600">Discover tools and services to enhance your projects</p>
+      </div>
+      
+      <% if current_user.admin? %>
+        <%= link_to sync_products_path, method: :post, 
+            class: "inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
+            data: { confirm: "Sync products from Medusa?" } do %>
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          Sync Products
+        <% end %>
+      <% end %>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+      <%= form_with url: products_path, method: :get, local: true, 
+          class: "flex flex-wrap items-center gap-4" do |form| %>
+        
+        <!-- Search -->
+        <div class="flex-1 min-w-64">
+          <%= form.text_field :search, 
+              value: @search_query,
+              placeholder: "Search products...",
+              class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" %>
+        </div>
+        
+        <!-- Collection Filter -->
+        <div class="min-w-48">
+          <%= form.select :collection, 
+              options_for_select([["All Collections", ""]] + @collections.map { |c| [c, c] }, @current_collection),
+              {},
+              { class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" } %>
+        </div>
+        
+        <!-- Submit -->
+        <%= form.submit "Filter", 
+            class: "inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" %>
+        
+        <% if @search_query.present? || @current_collection.present? %>
+          <%= link_to products_path, 
+              class: "text-sm text-gray-500 hover:text-gray-700" do %>
+            Clear filters
+          <% end %>
+        <% end %>
+      <% end %>
+    </div>
+
+    <!-- Products Grid -->
+    <% if @products.any? %>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+        <% @products.each do |product| %>
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+            <!-- Product Image -->
+            <div class="aspect-w-16 aspect-h-9 bg-gray-100">
+              <% if product.thumbnail_url.present? %>
+                <%= image_tag product.thumbnail_url, 
+                    alt: product.title,
+                    class: "w-full h-48 object-cover" %>
+              <% else %>
+                <div class="w-full h-48 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                  <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                  </svg>
+                </div>
+              <% end %>
+            </div>
+            
+            <!-- Product Info -->
+            <div class="p-4">
+              <div class="flex items-start justify-between mb-2">
+                <h3 class="text-lg font-semibold text-gray-900 line-clamp-2">
+                  <%= link_to product.title, product_path(product), 
+                      class: "hover:text-indigo-600" %>
+                </h3>
+                <span class="text-lg font-bold text-indigo-600 ml-2">
+                  <%= product.formatted_price %>
+                </span>
+              </div>
+              
+              <p class="text-gray-600 text-sm line-clamp-3 mb-3">
+                <%= product.description %>
+              </p>
+              
+              <!-- Tags -->
+              <% if product.tags.present? %>
+                <div class="flex flex-wrap gap-1 mb-3">
+                  <% product.tags.first(3).each do |tag| %>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      <%= tag %>
+                    </span>
+                  <% end %>
+                  <% if product.tags.size > 3 %>
+                    <span class="text-xs text-gray-500">+<%= product.tags.size - 3 %> more</span>
+                  <% end %>
+                </div>
+              <% end %>
+              
+              <!-- Collection -->
+              <% if product.collection_title.present? %>
+                <p class="text-xs text-gray-500 mb-3">
+                  <%= product.collection_title %>
+                </p>
+              <% end %>
+              
+              <!-- Stock Status -->
+              <div class="flex items-center justify-between">
+                <% if product.in_stock? %>
+                  <span class="inline-flex items-center text-sm text-green-600">
+                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    In Stock
+                  </span>
+                <% else %>
+                  <span class="inline-flex items-center text-sm text-red-600">
+                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    Out of Stock
+                  </span>
+                <% end %>
+                
+                <!-- Quick Add Button -->
+                <% if product.in_stock? %>
+                  <%= button_to add_item_carts_path, 
+                      params: { product_id: product.id, quantity: 1 },
+                      method: :post,
+                      remote: true,
+                      class: "inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" do %>
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5-6M17 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2"></path>
+                    </svg>
+                    Add
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="flex justify-center">
+        <%= paginate @products if respond_to?(:paginate) %>
+      </div>
+    <% else %>
+      <!-- Empty State -->
+      <div class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No products found</h3>
+        <p class="mt-1 text-sm text-gray-500">
+          <% if @search_query.present? || @current_collection.present? %>
+            Try adjusting your search or filter criteria.
+          <% else %>
+            Products will appear here once they're synced from Medusa.
+          <% end %>
+        </p>
+        <% if current_user.admin? && @search_query.blank? && @current_collection.blank? %>
+          <div class="mt-6">
+            <%= link_to sync_products_path, method: :post,
+                class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" do %>
+              Sync Products from Medusa
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

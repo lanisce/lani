@@ -1,0 +1,248 @@
+<% content_for :title, "Admin Dashboard" %>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+    <p class="text-gray-600 mt-2">Overview of your Lani platform</p>
+  </div>
+
+  <!-- Stats Overview -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-5">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
+              <span class="text-white text-sm font-medium">👥</span>
+            </div>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">Total Users</dt>
+              <dd class="text-lg font-medium text-gray-900"><%= @stats[:users] %></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-5">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+              <span class="text-white text-sm font-medium">📁</span>
+            </div>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">Total Projects</dt>
+              <dd class="text-lg font-medium text-gray-900"><%= @stats[:projects] %></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-5">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
+              <span class="text-white text-sm font-medium">✓</span>
+            </div>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">Total Tasks</dt>
+              <dd class="text-lg font-medium text-gray-900"><%= @stats[:tasks] %></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-5">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
+              <span class="text-white text-sm font-medium">🚀</span>
+            </div>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">Active Projects</dt>
+              <dd class="text-lg font-medium text-gray-900"><%= @stats[:active_projects] %></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-5">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-green-600 rounded-md flex items-center justify-center">
+              <span class="text-white text-sm font-medium">✅</span>
+            </div>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">Completed Tasks</dt>
+              <dd class="text-lg font-medium text-gray-900"><%= @stats[:completed_tasks] %></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-5">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
+              <span class="text-white text-sm font-medium">⚠️</span>
+            </div>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">Overdue Tasks</dt>
+              <dd class="text-lg font-medium text-gray-900"><%= @stats[:overdue_tasks] %></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts and Recent Activity -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+    <!-- Project Status Chart -->
+    <div class="bg-white shadow rounded-lg">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">Project Status Distribution</h3>
+      </div>
+      <div class="p-6">
+        <% @project_status_data.each do |status, count| %>
+          <div class="flex items-center justify-between py-2">
+            <span class="text-sm font-medium text-gray-700 capitalize"><%= status.humanize %></span>
+            <div class="flex items-center">
+              <div class="w-24 bg-gray-200 rounded-full h-2 mr-3">
+                <div class="bg-blue-600 h-2 rounded-full" style="width: <%= (count.to_f / @stats[:projects] * 100).round(1) %>%"></div>
+              </div>
+              <span class="text-sm text-gray-600"><%= count %></span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Task Status Chart -->
+    <div class="bg-white shadow rounded-lg">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">Task Status Distribution</h3>
+      </div>
+      <div class="p-6">
+        <% @task_status_data.each do |status, count| %>
+          <div class="flex items-center justify-between py-2">
+            <span class="text-sm font-medium text-gray-700 capitalize"><%= status.humanize %></span>
+            <div class="flex items-center">
+              <div class="w-24 bg-gray-200 rounded-full h-2 mr-3">
+                <div class="bg-green-600 h-2 rounded-full" style="width: <%= (count.to_f / @stats[:tasks] * 100).round(1) %>%"></div>
+              </div>
+              <span class="text-sm text-gray-600"><%= count %></span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Recent Users -->
+    <div class="bg-white shadow rounded-lg">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">Recent Users</h3>
+      </div>
+      <div class="divide-y divide-gray-200">
+        <% @recent_users.each do |user| %>
+          <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-900"><%= user.name %></p>
+                <p class="text-sm text-gray-500"><%= user.email %></p>
+                <p class="text-xs text-gray-400 capitalize"><%= user.role.humanize %></p>
+              </div>
+              <div class="text-right">
+                <p class="text-xs text-gray-400"><%= time_ago_in_words(user.created_at) %> ago</p>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <div class="px-6 py-3 bg-gray-50">
+        <%= link_to "View all users", admin_users_path, class: "text-sm text-blue-600 hover:text-blue-700" %>
+      </div>
+    </div>
+
+    <!-- Recent Projects -->
+    <div class="bg-white shadow rounded-lg">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">Recent Projects</h3>
+      </div>
+      <div class="divide-y divide-gray-200">
+        <% @recent_projects.each do |project| %>
+          <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-900"><%= project.name %></p>
+                <p class="text-sm text-gray-500"><%= project.owner.name %></p>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-<%= project.status == 'active' ? 'green' : 'gray' %>-100 text-<%= project.status == 'active' ? 'green' : 'gray' %>-800 capitalize">
+                  <%= project.status.humanize %>
+                </span>
+              </div>
+              <div class="text-right">
+                <p class="text-xs text-gray-400"><%= time_ago_in_words(project.created_at) %> ago</p>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <div class="px-6 py-3 bg-gray-50">
+        <%= link_to "View all projects", admin_projects_path, class: "text-sm text-blue-600 hover:text-blue-700" %>
+      </div>
+    </div>
+
+    <!-- Recent Tasks -->
+    <div class="bg-white shadow rounded-lg">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900">Recent Tasks</h3>
+      </div>
+      <div class="divide-y divide-gray-200">
+        <% @recent_tasks.each do |task| %>
+          <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-900"><%= task.title %></p>
+                <p class="text-sm text-gray-500"><%= task.project.name %></p>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-<%= task.status == 'completed' ? 'green' : task.status == 'in_progress' ? 'yellow' : 'gray' %>-100 text-<%= task.status == 'completed' ? 'green' : task.status == 'in_progress' ? 'yellow' : 'gray' %>-800 capitalize">
+                  <%= task.status.humanize %>
+                </span>
+              </div>
+              <div class="text-right">
+                <p class="text-xs text-gray-400"><%= time_ago_in_words(task.created_at) %> ago</p>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <div class="px-6 py-3 bg-gray-50">
+        <%= link_to "View all tasks", projects_path, class: "text-sm text-blue-600 hover:text-blue-700" %>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,394 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "lani.fullname" . }}-web
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "lani.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  {{- if not .Values.autoscaling.web.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      {{- include "lani.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "lani.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: web
+    spec:
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "lani.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - bundle
+            - exec
+            - rails
+            - server
+            - -b
+            - 0.0.0.0
+            - -p
+            - "3000"
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- if eq .Values.postgresql.type "internal" }}
+            - name: DATABASE_URL
+              value: "postgres://{{ .Values.postgresql.internal.auth.username }}:$(POSTGRES_PASSWORD)@{{ include "lani.fullname" . }}-postgresql:5432/{{ .Values.postgresql.internal.auth.database }}"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "lani.fullname" . }}-postgresql
+                  key: password
+            {{- else if eq .Values.postgresql.type "external" }}
+            - name: DATABASE_URL
+              value: "postgres://{{ .Values.postgresql.external.username }}:$(POSTGRES_PASSWORD)@{{ .Values.postgresql.external.host }}:{{ .Values.postgresql.external.port }}/{{ .Values.postgresql.external.database }}?sslmode={{ .Values.postgresql.external.sslMode }}"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "lani.secretName" . }}
+                  key: postgres-password
+            {{- end }}
+            {{- if eq .Values.redis.type "internal" }}
+            - name: REDIS_URL
+              value: "redis://:$(REDIS_PASSWORD)@{{ include "lani.fullname" . }}-redis-master:6379/0"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "lani.fullname" . }}-redis
+                  key: redis-password
+            {{- else if eq .Values.redis.type "external" }}
+            - name: REDIS_URL
+              value: "redis://:$(REDIS_PASSWORD)@{{ .Values.redis.external.host }}:{{ .Values.redis.external.port }}/{{ .Values.redis.external.database }}"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "lani.secretName" . }}
+                  key: redis-password
+            {{- end }}
+          envFrom:
+            {{- if .Values.secrets.create }}
+            - secretRef:
+                name: {{ include "lani.secretName" . }}
+            {{- end }}
+          {{- if .Values.healthChecks.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.healthChecks.liveness.path }}
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: localhost
+            initialDelaySeconds: {{ .Values.healthChecks.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthChecks.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthChecks.liveness.timeoutSeconds }}
+            successThreshold: 1
+            failureThreshold: {{ .Values.healthChecks.liveness.failureThreshold }}
+          {{- end }}
+          {{- if .Values.healthChecks.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.healthChecks.readiness.path }}
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: localhost
+            initialDelaySeconds: {{ .Values.healthChecks.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthChecks.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthChecks.readiness.timeoutSeconds }}
+            successThreshold: 1
+            failureThreshold: {{ .Values.healthChecks.readiness.failureThreshold }}
+          {{- end }}
+          {{- if .Values.healthChecks.startup.enabled }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.healthChecks.startup.path }}
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: localhost
+            initialDelaySeconds: {{ .Values.healthChecks.startup.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthChecks.startup.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthChecks.startup.timeoutSeconds }}
+            successThreshold: 1
+            failureThreshold: {{ .Values.healthChecks.startup.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources.web | nindent 12 }}
+          volumeMounts:
+            {{- if .Values.storage.enabled }}
+            - name: storage
+              mountPath: /app/storage
+            {{- end }}
+            - name: tmp
+              mountPath: /app/tmp
+            - name: log
+              mountPath: /app/log
+      volumes:
+        {{- if .Values.storage.enabled }}
+        - name: storage
+          persistentVolumeClaim:
+            claimName: {{ include "lani.fullname" . }}-storage
+        {{- end }}
+        - name: tmp
+          emptyDir: {}
+        - name: log
+          emptyDir: {}
+      {{- if .Values.initContainers.dbMigrate.enabled }}
+      initContainers:
+        - name: db-migrate
+          image: "{{ .Values.image.registry }}/{{ .Values.initContainers.dbMigrate.image.repository }}:{{ .Values.initContainers.dbMigrate.image.tag | default .Chart.AppVersion }}"
+          command:
+            - bundle
+            - exec
+            - rails
+            - db:migrate
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- if eq .Values.postgresql.type "internal" }}
+            - name: DATABASE_URL
+              value: "postgres://{{ .Values.postgresql.internal.auth.username }}:$(POSTGRES_PASSWORD)@{{ include "lani.fullname" . }}-postgresql:5432/{{ .Values.postgresql.internal.auth.database }}"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "lani.fullname" . }}-postgresql
+                  key: password
+            {{- else if eq .Values.postgresql.type "external" }}
+            - name: DATABASE_URL
+              value: "postgres://{{ .Values.postgresql.external.username }}:$(POSTGRES_PASSWORD)@{{ .Values.postgresql.external.host }}:{{ .Values.postgresql.external.port }}/{{ .Values.postgresql.external.database }}?sslmode={{ .Values.postgresql.external.sslMode }}"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "lani.secretName" . }}
+                  key: postgres-password
+            {{- end }}
+          envFrom:
+            {{- if .Values.secrets.create }}
+            - secretRef:
+                name: {{ include "lani.secretName" . }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.initContainers.dbMigrate.resources | nindent 12 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+---
+{{- if .Values.sidekiq.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "lani.fullname" . }}-sidekiq
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "lani.labels" . | nindent 4 }}
+    app.kubernetes.io/component: sidekiq
+spec:
+  {{- if not .Values.autoscaling.sidekiq.enabled }}
+  replicas: {{ .Values.sidekiq.replicaCount }}
+  {{- end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      {{- include "lani.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: sidekiq
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "lani.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: sidekiq
+    spec:
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "lani.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      containers:
+        - name: sidekiq
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - bundle
+            - exec
+            - sidekiq
+            - -C
+            - config/sidekiq.yml
+            - -q
+            {{- range .Values.sidekiq.queues }}
+            - {{ . }}
+            {{- end }}
+            - -c
+            - {{ .Values.sidekiq.concurrency | quote }}
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- if eq .Values.postgresql.type "internal" }}
+            - name: DATABASE_URL
+              value: "postgres://{{ .Values.postgresql.internal.auth.username }}:$(POSTGRES_PASSWORD)@{{ include "lani.fullname" . }}-postgresql:5432/{{ .Values.postgresql.internal.auth.database }}"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "lani.fullname" . }}-postgresql
+                  key: password
+            {{- else if eq .Values.postgresql.type "external" }}
+            - name: DATABASE_URL
+              value: "postgres://{{ .Values.postgresql.external.username }}:$(POSTGRES_PASSWORD)@{{ .Values.postgresql.external.host }}:{{ .Values.postgresql.external.port }}/{{ .Values.postgresql.external.database }}?sslmode={{ .Values.postgresql.external.sslMode }}"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "lani.secretName" . }}
+                  key: postgres-password
+            {{- end }}
+            {{- if eq .Values.redis.type "internal" }}
+            - name: REDIS_URL
+              value: "redis://:$(REDIS_PASSWORD)@{{ include "lani.fullname" . }}-redis-master:6379/0"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "lani.fullname" . }}-redis
+                  key: redis-password
+            {{- else if eq .Values.redis.type "external" }}
+            - name: REDIS_URL
+              value: "redis://:$(REDIS_PASSWORD)@{{ .Values.redis.external.host }}:{{ .Values.redis.external.port }}/{{ .Values.redis.external.database }}"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "lani.secretName" . }}
+                  key: redis-password
+            {{- end }}
+          envFrom:
+            {{- if .Values.secrets.create }}
+            - secretRef:
+                name: {{ include "lani.secretName" . }}
+            {{- end }}
+          livenessProbe:
+            exec:
+              command:
+                - pgrep
+                - -f
+                - sidekiq
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - pgrep
+                - -f
+                - sidekiq
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources.sidekiq | nindent 12 }}
+          volumeMounts:
+            {{- if .Values.storage.enabled }}
+            - name: storage
+              mountPath: /app/storage
+            {{- end }}
+            - name: tmp
+              mountPath: /app/tmp
+            - name: log
+              mountPath: /app/log
+      volumes:
+        {{- if .Values.storage.enabled }}
+        - name: storage
+          persistentVolumeClaim:
+            claimName: {{ include "lani.fullname" . }}-storage
+        {{- end }}
+        - name: tmp
+          emptyDir: {}
+        - name: log
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

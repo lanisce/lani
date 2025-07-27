@@ -1,0 +1,179 @@
+<% content_for :title, "#{@project.name} - New Budget" %>
+
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Breadcrumb -->
+  <nav class="flex mb-6" aria-label="Breadcrumb">
+    <ol class="flex items-center space-x-4">
+      <li>
+        <%= link_to "Projects", projects_path, class: "text-gray-500 hover:text-gray-700" %>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+          <%= link_to @project.name, project_path(@project), class: "ml-4 text-gray-500 hover:text-gray-700" %>
+        </div>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+          <%= link_to "Budgets", project_budgets_path(@project), class: "ml-4 text-gray-500 hover:text-gray-700" %>
+        </div>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+          <span class="ml-4 text-gray-700 font-medium">New Budget</span>
+        </div>
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">Create New Budget</h1>
+    <p class="text-gray-600 mt-2">Set up a budget category to track project expenses</p>
+  </div>
+
+  <!-- Budget Form -->
+  <div class="bg-white shadow rounded-lg">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h3 class="text-lg font-medium text-gray-900">Budget Details</h3>
+    </div>
+    
+    <div class="p-6">
+      <%= form_with model: [@project, @budget], local: true, class: "space-y-6" do |form| %>
+        <% if @budget.errors.any? %>
+          <div class="bg-red-50 border border-red-200 rounded-md p-4">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">Please fix the following errors:</h3>
+                <div class="mt-2 text-sm text-red-700">
+                  <ul class="list-disc list-inside space-y-1">
+                    <% @budget.errors.full_messages.each do |message| %>
+                      <li><%= message %></li>
+                    <% end %>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <%= form.label :name, "Budget Name", class: "block text-sm font-medium text-gray-700 mb-2" %>
+            <%= form.text_field :name, 
+                placeholder: "e.g., Q1 Materials Budget",
+                class: "form-input w-full #{'border-red-300' if @budget.errors[:name].any?}" %>
+            <% if @budget.errors[:name].any? %>
+              <p class="mt-1 text-sm text-red-600"><%= @budget.errors[:name].first %></p>
+            <% end %>
+          </div>
+
+          <div>
+            <%= form.label :category, "Category", class: "block text-sm font-medium text-gray-700 mb-2" %>
+            <%= form.select :category, 
+                options_for_select(Budget::CATEGORIES.map { |cat| [cat.humanize, cat] }, @budget.category),
+                { prompt: "Select a category" },
+                { class: "form-select w-full #{'border-red-300' if @budget.errors[:category].any?}" } %>
+            <% if @budget.errors[:category].any? %>
+              <p class="mt-1 text-sm text-red-600"><%= @budget.errors[:category].first %></p>
+            <% end %>
+          </div>
+        </div>
+
+        <div>
+          <%= form.label :description, "Description", class: "block text-sm font-medium text-gray-700 mb-2" %>
+          <%= form.text_area :description, 
+              rows: 3,
+              placeholder: "Optional description of what this budget covers...",
+              class: "form-textarea w-full" %>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <%= form.label :amount, "Budget Amount", class: "block text-sm font-medium text-gray-700 mb-2" %>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span class="text-gray-500 sm:text-sm">$</span>
+              </div>
+              <%= form.number_field :amount, 
+                  step: 0.01,
+                  min: 0,
+                  placeholder: "0.00",
+                  class: "form-input w-full pl-7 #{'border-red-300' if @budget.errors[:amount].any?}" %>
+            </div>
+            <% if @budget.errors[:amount].any? %>
+              <p class="mt-1 text-sm text-red-600"><%= @budget.errors[:amount].first %></p>
+            <% end %>
+          </div>
+
+          <div>
+            <%= form.label :period_start, "Start Date", class: "block text-sm font-medium text-gray-700 mb-2" %>
+            <%= form.date_field :period_start, 
+                class: "form-input w-full #{'border-red-300' if @budget.errors[:period_start].any?}" %>
+            <% if @budget.errors[:period_start].any? %>
+              <p class="mt-1 text-sm text-red-600"><%= @budget.errors[:period_start].first %></p>
+            <% end %>
+          </div>
+
+          <div>
+            <%= form.label :period_end, "End Date", class: "block text-sm font-medium text-gray-700 mb-2" %>
+            <%= form.date_field :period_end, 
+                class: "form-input w-full #{'border-red-300' if @budget.errors[:period_end].any?}" %>
+            <% if @budget.errors[:period_end].any? %>
+              <p class="mt-1 text-sm text-red-600"><%= @budget.errors[:period_end].first %></p>
+            <% end %>
+          </div>
+        </div>
+
+        <div class="flex items-center">
+          <%= form.check_box :active, class: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" %>
+          <%= form.label :active, "Active Budget", class: "ml-2 block text-sm text-gray-900" %>
+          <p class="ml-2 text-sm text-gray-500">(Active budgets are included in spending calculations)</p>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+          <%= link_to "Cancel", project_budgets_path(@project), class: "btn-secondary" %>
+          <%= form.submit "Create Budget", class: "btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Budget Categories Info -->
+  <div class="mt-8 bg-blue-50 border border-blue-200 rounded-md p-4">
+    <div class="flex">
+      <div class="flex-shrink-0">
+        <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+        </svg>
+      </div>
+      <div class="ml-3">
+        <h3 class="text-sm font-medium text-blue-800">Budget Categories</h3>
+        <div class="mt-2 text-sm text-blue-700">
+          <ul class="list-disc list-inside space-y-1">
+            <li><strong>Materials:</strong> Raw materials, supplies, and consumables</li>
+            <li><strong>Labor:</strong> Wages, contractor fees, and personnel costs</li>
+            <li><strong>Equipment:</strong> Tools, machinery, and equipment purchases/rentals</li>
+            <li><strong>Services:</strong> Professional services, consultancy, and outsourcing</li>
+            <li><strong>Travel:</strong> Transportation, accommodation, and travel expenses</li>
+            <li><strong>Marketing:</strong> Advertising, promotion, and marketing activities</li>
+            <li><strong>Other:</strong> Miscellaneous expenses not covered by other categories</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

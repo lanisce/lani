@@ -1,0 +1,391 @@
+# Default values for lani.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global configuration
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+
+# Application configuration
+app:
+  name: lani
+  version: "1.0.0"
+  
+# Image configuration
+image:
+  registry: ghcr.io
+  repository: your-org/lani
+  tag: "latest"
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+# Deployment configuration
+replicaCount: 3
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 3000
+  targetPort: http
+  annotations: {}
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+  hosts:
+    - host: lani.yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: lani-tls-secret
+      hosts:
+        - lani.yourdomain.com
+
+# Resource configuration
+resources:
+  web:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 1000m
+  sidekiq:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+
+# Autoscaling configuration
+autoscaling:
+  web:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  sidekiq:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  web:
+    enabled: true
+    minAvailable: 2
+  sidekiq:
+    enabled: true
+    minAvailable: 1
+
+# Security Context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Node selection
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Environment variables
+env:
+  RAILS_ENV: production
+  RACK_ENV: production
+  NODE_ENV: production
+  RAILS_SERVE_STATIC_FILES: "true"
+  RAILS_LOG_TO_STDOUT: "true"
+  RAILS_MAX_THREADS: "5"
+  WEB_CONCURRENCY: "2"
+  
+  # Feature flags
+  ENABLE_MAPBOX_INTEGRATION: "true"
+  ENABLE_NEXTCLOUD_INTEGRATION: "true"
+  ENABLE_OPENPROJECT_INTEGRATION: "true"
+  ENABLE_MAYBE_INTEGRATION: "true"
+  ENABLE_MEDUSA_INTEGRATION: "true"
+  ENABLE_STRIPE_PAYMENTS: "true"
+  
+  # Performance settings
+  RAILS_CACHE_STORE: "redis_cache_store"
+  CACHE_REDIS_URL: "redis://lani-redis:6379/1"
+  SESSION_STORE: "redis_session_store"
+  
+  # External service URLs
+  OPENPROJECT_URL: "https://your-openproject.com"
+  MAYBE_API_URL: "https://api.maybe.finance"
+  NEXTCLOUD_URL: "https://your-nextcloud.com"
+  MEDUSA_API_URL: "https://your-medusa.com"
+  MAPBOX_API_URL: "https://api.mapbox.com"
+  
+  # Email configuration
+  SMTP_HOST: "smtp.example.com"
+  SMTP_PORT: "587"
+  SMTP_DOMAIN: "yourdomain.com"
+  FROM_EMAIL: "noreply@yourdomain.com"
+  
+  # Monitoring and logging
+  ENABLE_PERFORMANCE_MONITORING: "true"
+  LOG_LEVEL: "info"
+  ENABLE_SQL_LOGGING: "false"
+
+# Secrets configuration
+secrets:
+  create: true
+  external: false
+  externalSecretStore: ""
+  data: {}
+    # SECRET_KEY_BASE: ""
+    # RAILS_MASTER_KEY: ""
+    # DATABASE_URL: ""
+    # REDIS_URL: ""
+    # STRIPE_SECRET_KEY: ""
+    # STRIPE_PUBLISHABLE_KEY: ""
+    # MAPBOX_ACCESS_TOKEN: ""
+    # OPENPROJECT_API_KEY: ""
+    # MAYBE_API_KEY: ""
+    # NEXTCLOUD_USERNAME: ""
+    # NEXTCLOUD_PASSWORD: ""
+    # MEDUSA_API_KEY: ""
+
+# PostgreSQL configuration
+postgresql:
+  # Type: internal (managed by Helm) or external (existing database)
+  type: internal
+  
+  # Internal PostgreSQL configuration (when type: internal)
+  internal:
+    enabled: true
+    auth:
+      postgresPassword: ""
+      username: lani
+      password: ""
+      database: lani_production
+    architecture: standalone
+    primary:
+      persistence:
+        enabled: true
+        size: 100Gi
+        storageClass: ""
+      resources:
+        requests:
+          memory: 256Mi
+          cpu: 250m
+        limits:
+          memory: 1Gi
+          cpu: 1000m
+      initdb:
+        scripts:
+          01-extensions.sql: |
+            CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+            CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+            CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+  
+  # External PostgreSQL configuration (when type: external)
+  external:
+    host: ""
+    port: 5432
+    username: ""
+    password: ""
+    database: ""
+    sslMode: require
+
+# Redis configuration
+redis:
+  # Type: internal (managed by Helm) or external (existing Redis)
+  type: internal
+  
+  # Internal Redis configuration (when type: internal)
+  internal:
+    enabled: true
+    architecture: standalone
+    auth:
+      enabled: true
+      password: ""
+    master:
+      persistence:
+        enabled: true
+        size: 10Gi
+        storageClass: ""
+      resources:
+        requests:
+          memory: 128Mi
+          cpu: 100m
+        limits:
+          memory: 512Mi
+          cpu: 500m
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+  
+  # External Redis configuration (when type: external)
+  external:
+    host: ""
+    port: 6379
+    password: ""
+    database: 0
+
+# Sidekiq configuration
+sidekiq:
+  enabled: true
+  replicaCount: 2
+  queues:
+    - default
+    - mailers
+    - active_storage_analysis
+    - active_storage_purge
+  concurrency: 10
+
+# Storage configuration
+storage:
+  enabled: true
+  size: 50Gi
+  storageClass: ""
+  accessMode: ReadWriteMany
+
+# Backup configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *"
+  retention: 7
+  s3:
+    enabled: false
+    bucket: ""
+    region: ""
+    accessKeyId: ""
+    secretAccessKey: ""
+
+# Monitoring configuration
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+      scrapeTimeout: 10s
+  grafana:
+    enabled: true
+    dashboards:
+      enabled: true
+
+# Logging configuration
+logging:
+  enabled: true
+  fluentd:
+    enabled: true
+  elasticsearch:
+    enabled: false
+    host: ""
+    port: 9200
+
+# Certificate Manager
+certManager:
+  enabled: true
+  issuer:
+    name: letsencrypt-prod
+    email: admin@yourdomain.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+
+# Network Policy
+networkPolicy:
+  enabled: true
+  ingress:
+    enabled: true
+  egress:
+    enabled: true
+
+# Pod Security Policy
+podSecurityPolicy:
+  enabled: true
+
+# RBAC
+rbac:
+  create: true
+
+# Init containers
+initContainers:
+  dbMigrate:
+    enabled: true
+    image:
+      repository: your-org/lani
+      tag: "latest"
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+
+# Health checks
+healthChecks:
+  liveness:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 3
+  readiness:
+    enabled: true
+    path: /health/ready
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  startup:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 30
+
+# External services configuration
+externalServices:
+  stripe:
+    enabled: true
+    webhookEndpoint: /webhooks/stripe
+  mapbox:
+    enabled: true
+  openproject:
+    enabled: true
+  maybe:
+    enabled: true
+  nextcloud:
+    enabled: true
+  medusa:
+    enabled: true

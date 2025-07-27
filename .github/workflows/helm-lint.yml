@@ -1,0 +1,132 @@
+name: Lint and Test Helm Chart
+
+on:
+  pull_request:
+    paths:
+      - 'helm/lani/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'helm/lani/**'
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: '3.14.0'
+
+      - name: Add Helm repositories
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm repo add jetstack https://charts.jetstack.io
+          helm repo update
+
+      - name: Lint Helm Chart
+        run: |
+          helm lint helm/lani/
+
+      - name: Template Helm Chart
+        run: |
+          helm template lani helm/lani/ --debug --dry-run
+
+      - name: Template with different configurations
+        run: |
+          # Test with external PostgreSQL
+          helm template lani helm/lani/ \
+            --set postgresql.type=external \
+            --set postgresql.external.host=external-postgres.com \
+            --set postgresql.external.username=lani \
+            --set postgresql.external.database=lani_production \
+            --debug --dry-run
+
+          # Test with external Redis
+          helm template lani helm/lani/ \
+            --set redis.type=external \
+            --set redis.external.host=external-redis.com \
+            --debug --dry-run
+
+          # Test with autoscaling disabled
+          helm template lani helm/lani/ \
+            --set autoscaling.web.enabled=false \
+            --set autoscaling.sidekiq.enabled=false \
+            --debug --dry-run
+
+          # Test with ingress disabled
+          helm template lani helm/lani/ \
+            --set ingress.enabled=false \
+            --debug --dry-run
+
+      - name: Validate Chart Schema
+        run: |
+          # Check if all required fields are present
+          if ! helm show values helm/lani/ | grep -q "postgresql:"; then
+            echo "❌ PostgreSQL configuration missing"
+            exit 1
+          fi
+          
+          if ! helm show values helm/lani/ | grep -q "redis:"; then
+            echo "❌ Redis configuration missing"
+            exit 1
+          fi
+          
+          echo "✅ Chart schema validation passed"
+
+      - name: Check Chart Dependencies
+        run: |
+          cd helm/lani/
+          helm dependency update
+          helm dependency list
+
+      - name: Security Scan
+        run: |
+          # Check for common security issues in templates
+          echo "🔍 Scanning for security issues..."
+          
+          # Check for hardcoded secrets
+          if grep -r "password.*:" helm/lani/templates/ | grep -v "secretKeyRef\|configMapKeyRef"; then
+            echo "❌ Found potential hardcoded passwords"
+            exit 1
+          fi
+          
+          # Check for privileged containers
+          if grep -r "privileged.*true" helm/lani/templates/; then
+            echo "❌ Found privileged containers"
+            exit 1
+          fi
+          
+          # Check for root user
+          if grep -r "runAsUser.*0" helm/lani/templates/; then
+            echo "❌ Found containers running as root"
+            exit 1
+          fi
+          
+          echo "✅ Security scan passed"
+
+      - name: Chart Documentation Check
+        run: |
+          # Check if README exists and has required sections
+          if [ ! -f "helm/README.md" ]; then
+            echo "❌ Helm README.md missing"
+            exit 1
+          fi
+          
+          # Check for required sections
+          required_sections=("Quick Start" "Configuration" "Values" "Installation")
+          for section in "${required_sections[@]}"; do
+            if ! grep -q "$section" helm/README.md; then
+              echo "❌ Missing required section: $section"
+              exit 1
+            fi
+          done
+          
+          echo "✅ Documentation check passed"

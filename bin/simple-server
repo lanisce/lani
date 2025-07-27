@@ -1,0 +1,31 @@
+#!/usr/bin/env ruby
+
+# Ensure Logger is available before anything else
+require 'logger'
+
+# Load bundler and gems
+require_relative '../config/boot'
+
+# Load Rails application
+require_relative '../config/application'
+
+# Initialize Rails
+Rails.application.initialize!
+
+# Start WEBrick server directly (simpler than Puma)
+require 'webrick'
+
+server = WEBrick::HTTPServer.new(
+  Port: 3000,
+  BindAddress: '0.0.0.0',
+  DocumentRoot: Rails.public_path
+)
+
+# Mount Rails app
+server.mount '/', Rack::Handler::WEBrick, Rails.application
+
+# Handle shutdown gracefully
+trap('INT') { server.shutdown }
+
+puts "Starting Rails server on http://0.0.0.0:3000"
+server.start

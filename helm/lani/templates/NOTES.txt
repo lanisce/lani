@@ -1,0 +1,156 @@
+1. Get the application URL by running these commands:
+{{- if .Values.ingress.enabled }}
+{{- range $host := .Values.ingress.hosts }}
+  {{- range .paths }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
+  {{- end }}
+{{- end }}
+{{- else if contains "NodePort" .Values.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "lani.fullname" . }}-web)
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.service.type }}
+     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+           You can watch the status of by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "lani.fullname" . }}-web'
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "lani.fullname" . }}-web --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo http://$SERVICE_IP:{{ .Values.service.port }}
+{{- else if contains "ClusterIP" .Values.service.type }}
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "lani.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
+{{- end }}
+
+2. Database Configuration:
+{{- if eq .Values.postgresql.type "internal" }}
+   ✓ Using internal PostgreSQL database
+   Database: {{ .Values.postgresql.internal.auth.database }}
+   Username: {{ .Values.postgresql.internal.auth.username }}
+{{- else if eq .Values.postgresql.type "external" }}
+   ✓ Using external PostgreSQL database
+   Host: {{ .Values.postgresql.external.host }}:{{ .Values.postgresql.external.port }}
+   Database: {{ .Values.postgresql.external.database }}
+   Username: {{ .Values.postgresql.external.username }}
+{{- end }}
+
+3. Cache Configuration:
+{{- if eq .Values.redis.type "internal" }}
+   ✓ Using internal Redis cache
+{{- else if eq .Values.redis.type "external" }}
+   ✓ Using external Redis cache
+   Host: {{ .Values.redis.external.host }}:{{ .Values.redis.external.port }}
+   Database: {{ .Values.redis.external.database }}
+{{- end }}
+
+4. Background Jobs:
+{{- if .Values.sidekiq.enabled }}
+   ✓ Sidekiq workers: {{ .Values.sidekiq.replicaCount }} replicas
+   Queues: {{ join ", " .Values.sidekiq.queues }}
+   Concurrency: {{ .Values.sidekiq.concurrency }}
+{{- else }}
+   ✗ Sidekiq workers disabled
+{{- end }}
+
+5. Autoscaling:
+{{- if .Values.autoscaling.web.enabled }}
+   ✓ Web autoscaling: {{ .Values.autoscaling.web.minReplicas }}-{{ .Values.autoscaling.web.maxReplicas }} replicas
+{{- else }}
+   ✗ Web autoscaling disabled ({{ .Values.replicaCount }} replicas)
+{{- end }}
+{{- if and .Values.sidekiq.enabled .Values.autoscaling.sidekiq.enabled }}
+   ✓ Sidekiq autoscaling: {{ .Values.autoscaling.sidekiq.minReplicas }}-{{ .Values.autoscaling.sidekiq.maxReplicas }} replicas
+{{- else }}
+   ✗ Sidekiq autoscaling disabled
+{{- end }}
+
+6. Storage:
+{{- if .Values.storage.enabled }}
+   ✓ Persistent storage: {{ .Values.storage.size }}
+   Access mode: {{ .Values.storage.accessMode }}
+   {{- if include "lani.storageClass" . }}
+   Storage class: {{ include "lani.storageClass" . }}
+   {{- end }}
+{{- else }}
+   ✗ Persistent storage disabled
+{{- end }}
+
+7. Monitoring:
+{{- if .Values.monitoring.enabled }}
+   ✓ Monitoring enabled
+   {{- if .Values.monitoring.prometheus.enabled }}
+   ✓ Prometheus metrics available at /metrics
+   {{- end }}
+   {{- if .Values.monitoring.grafana.enabled }}
+   ✓ Grafana dashboards enabled
+   {{- end }}
+{{- else }}
+   ✗ Monitoring disabled
+{{- end }}
+
+8. Backup:
+{{- if .Values.backup.enabled }}
+   ✓ Automated backups enabled
+   Schedule: {{ .Values.backup.schedule }}
+   Retention: {{ .Values.backup.retention }} days
+   {{- if .Values.backup.s3.enabled }}
+   S3 Bucket: {{ .Values.backup.s3.bucket }}
+   {{- end }}
+{{- else }}
+   ✗ Automated backups disabled
+{{- end }}
+
+9. External Integrations:
+{{- if eq .Values.env.ENABLE_STRIPE_PAYMENTS "true" }}
+   ✓ Stripe payments enabled
+{{- end }}
+{{- if eq .Values.env.ENABLE_MAPBOX_INTEGRATION "true" }}
+   ✓ Mapbox integration enabled
+{{- end }}
+{{- if eq .Values.env.ENABLE_OPENPROJECT_INTEGRATION "true" }}
+   ✓ OpenProject integration enabled
+{{- end }}
+{{- if eq .Values.env.ENABLE_MAYBE_INTEGRATION "true" }}
+   ✓ Maybe Finance integration enabled
+{{- end }}
+{{- if eq .Values.env.ENABLE_NEXTCLOUD_INTEGRATION "true" }}
+   ✓ Nextcloud integration enabled
+{{- end }}
+{{- if eq .Values.env.ENABLE_MEDUSA_INTEGRATION "true" }}
+   ✓ Medusa e-commerce integration enabled
+{{- end }}
+
+10. Security:
+{{- if .Values.networkPolicy.enabled }}
+    ✓ Network policies enabled
+{{- end }}
+{{- if .Values.podSecurityPolicy.enabled }}
+    ✓ Pod security policies enabled
+{{- end }}
+{{- if .Values.secrets.external }}
+    ✓ External secrets management enabled
+{{- else }}
+    ⚠ Using internal secrets (not recommended for production)
+{{- end }}
+
+11. Health Checks:
+    To check the health of your deployment:
+    kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+    kubectl logs -n {{ .Release.Namespace }} deployment/{{ include "lani.fullname" . }}-web
+
+12. Useful Commands:
+    # View application logs
+    kubectl logs -n {{ .Release.Namespace }} -f deployment/{{ include "lani.fullname" . }}-web
+    
+    # View Sidekiq logs
+    kubectl logs -n {{ .Release.Namespace }} -f deployment/{{ include "lani.fullname" . }}-sidekiq
+    
+    # Access Rails console
+    kubectl exec -n {{ .Release.Namespace }} -it deployment/{{ include "lani.fullname" . }}-web -- rails console
+    
+    # Run database migrations
+    kubectl exec -n {{ .Release.Namespace }} -it deployment/{{ include "lani.fullname" . }}-web -- rails db:migrate
+    
+    # Scale web deployment
+    kubectl scale -n {{ .Release.Namespace }} deployment/{{ include "lani.fullname" . }}-web --replicas=5
+
+For more information, visit: https://github.com/your-org/lani
