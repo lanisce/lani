@@ -9,6 +9,5 @@ class CreateProjectMemberships < ActiveRecord::Migration[7.0]
     end
 
     add_index :project_memberships, [:user_id, :project_id], unique: true
-    add_index :project_memberships, :project_id
   end
 end

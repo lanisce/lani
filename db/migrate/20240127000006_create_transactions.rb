@@ -19,6 +19,5 @@ class CreateTransactions < ActiveRecord::Migration[7.0]
     add_index :transactions, [:budget_id, :transaction_type]
     add_index :transactions, :transaction_type
     add_index :transactions, :transaction_date
-    add_index :transactions, :user_id
   end
 end

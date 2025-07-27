@@ -11,11 +11,13 @@ class ProjectsController < ApplicationController
   cache_action :show, expires_in: 30.minutes, vary_by: [:project, :current_user]
 
   def index
+    authorize Project
     @projects = policy_scope(Project).includes(:owner, :members, :tasks)
     @projects = @projects.page(params[:page])
   end
 
   def show
+    authorize @project
     @tasks = policy_scope(@project.tasks).includes(:user)
     @recent_tasks = @tasks.limit(5).order(created_at: :desc)
     @project_members = @project.members.includes(:user)
@@ -42,9 +44,11 @@ class ProjectsController < ApplicationController
   end
 
   def edit
+    authorize @project
   end
 
   def update
+    authorize @project
     if @project.update(project_params)
       redirect_to @project, notice: 'Project was successfully updated.'
     else
@@ -53,6 +57,7 @@ class ProjectsController < ApplicationController
   end
 
   def destroy
+    authorize @project
     @project.destroy
     redirect_to projects_url, notice: 'Project was successfully deleted.'
   end

@@ -43,6 +43,7 @@ services:
 
   web:
     build: .
+    command: ./docker-entrypoint.sh
     ports:
       - "3000:3000"
     depends_on:
@@ -52,6 +53,7 @@ services:
       DATABASE_URL: postgresql://lani:password@db:5432/lani_development
       REDIS_URL: redis://redis:6379/0
       KEYCLOAK_URL: http://keycloak:8080
+      RAILS_ENV: development
     volumes:
       - .:/app
       - bundle_cache:/usr/local/bundle

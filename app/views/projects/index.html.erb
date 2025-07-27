@@ -164,30 +164,3 @@
     </div>
   <% end %>
 </div>
-                    <% end %>
-                    <% if policy(project).destroy? %>
-                      <%= link_to "Delete", project, method: :delete, 
-                          confirm: "Are you sure?", 
-                          class: "text-red-600 hover:text-red-900" %>
-                    <% end %>
-                  </td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-          
-          <% if @projects.empty? %>
-            <div class="text-center py-12">
-              <div class="text-sm text-gray-500">
-                No projects found.
-                <% if policy(Project).create? %>
-                  <%= link_to "Create your first project", new_project_path, class: "text-indigo-600 hover:text-indigo-900" %>
-                <% end %>
-              </div>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>

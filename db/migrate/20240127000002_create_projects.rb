@@ -20,7 +20,6 @@ class CreateProjects < ActiveRecord::Migration[7.0]
     end
 
     add_index :projects, :status
-    add_index :projects, :owner_id
     add_index :projects, [:latitude, :longitude]
     add_index :projects, :name
   end

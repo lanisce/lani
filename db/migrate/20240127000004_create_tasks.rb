@@ -21,8 +21,6 @@ class CreateTasks < ActiveRecord::Migration[7.0]
 
     add_index :tasks, :status
     add_index :tasks, :priority
-    add_index :tasks, :project_id
-    add_index :tasks, :user_id
     add_index :tasks, :due_date
   end
 end

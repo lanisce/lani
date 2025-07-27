@@ -1,0 +1,62 @@
+/* SVG sizing constraints - CRITICAL FIX */
+svg {
+  max-width: 1.5rem !important;
+  max-height: 1.5rem !important;
+}
+
+.w-4 svg {
+  width: 1rem !important;
+  height: 1rem !important;
+  max-width: 1rem !important;
+  max-height: 1rem !important;
+}
+
+.w-5 svg {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  max-width: 1.25rem !important;
+  max-height: 1.25rem !important;
+}
+
+.w-6 svg {
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+  max-width: 1.5rem !important;
+  max-height: 1.5rem !important;
+}
+
+.w-8 svg {
+  width: 2rem !important;
+  height: 2rem !important;
+  max-width: 2rem !important;
+  max-height: 2rem !important;
+}
+
+.w-9 svg {
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  max-width: 2.25rem !important;
+  max-height: 2.25rem !important;
+}
+
+/* Maybe Finance color scheme and component styles */
+.bg-gray-25 { background-color: #FAFAFA; }
+.bg-gray-50 { background-color: #F7F7F7; }
+.bg-gray-100 { background-color: #F0F0F0; }
+.bg-gray-800 { background-color: #242424; }
+.bg-gray-900 { background-color: #171717; }
+
+.text-gray-600 { color: #5C5C5C; }
+.text-gray-700 { color: #363636; }
+.text-gray-800 { color: #242424; }
+.text-gray-900 { color: #171717; }
+
+.bg-blue-500 { background-color: #2E90FA; }
+.bg-blue-600 { background-color: #1570EF; }
+.bg-blue-700 { background-color: #175CD3; }
+
+.text-blue-600 { color: #1570EF; }
+.text-blue-700 { color: #175CD3; }
+
+.hover\:bg-gray-100:hover { background-color: #F0F0F0; }
+.hover\:bg-blue-700:hover { background-color: #175CD3; }
