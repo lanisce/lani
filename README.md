@@ -222,8 +222,8 @@ We ❤️ contributions! Please see our [Contributing Guide](CONTRIBUTING.md) fo
 ## 📊 Project Stats
 
 <div align="center">
-  <img src="https://github-readme-stats.vercel.app/api?username=your-org&repo=lani&show_icons=true&theme=default" alt="GitHub Stats">
-  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=your-org&repo=lani&layout=compact" alt="Languages">
+  <img src="https://github-readme-stats.vercel.app/api?username=lanisce&repo=lani&show_icons=true&theme=default" alt="GitHub Stats">
+  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=lanisce&repo=lani&layout=compact" alt="Languages">
 </div>
 
 ## 🏆 Achievements
