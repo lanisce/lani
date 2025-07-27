@@ -1,3 +1,33 @@
+# frozen_string_literal: true
+
+#
+# Lani Platform - External API Service
+#
+# This file integrates with multiple open source projects and services:
+#
+# OpenProject API Integration:
+# Copyright (C) 2010-2024 the OpenProject GmbH
+# Licensed under GNU General Public License v3.0
+# https://github.com/opf/openproject
+#
+# Maybe Finance API Integration:
+# Copyright (c) 2024 Maybe Finance, Inc.
+# Licensed under GNU Affero General Public License v3.0
+# https://github.com/maybe-finance/maybe
+#
+# Nextcloud WebDAV Integration:
+# Copyright (C) 2016-2024 Nextcloud GmbH
+# Licensed under GNU Affero General Public License v3.0
+# https://github.com/nextcloud/server
+#
+# Medusa API Integration:
+# Copyright (c) 2021 Medusa
+# Licensed under MIT License
+# https://github.com/medusajs/medusa
+#
+# All integrations respect the original licenses and terms of service.
+#
+
 # Service for integrating with external APIs (OpenProject, Maybe, Nextcloud, Medusa)
 class ExternalApiService
   include HTTParty

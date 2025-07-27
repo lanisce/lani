@@ -1,3 +1,15 @@
+/*
+ * Lani Platform - Inline Edit Controller
+ * 
+ * This file incorporates design patterns and concepts from OpenProject:
+ * Copyright (C) 2010-2024 the OpenProject GmbH
+ * Licensed under GNU General Public License v3.0
+ * https://github.com/opf/openproject
+ * 
+ * OpenProject's inline editing functionality has been adapted and modified
+ * for use in the Lani platform while respecting the original GPL-3.0 license.
+ */
+
 import { Controller } from "@hotwired/stimulus"
 
 // OpenProject-inspired inline editing controller
